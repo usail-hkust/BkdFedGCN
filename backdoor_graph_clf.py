@@ -264,7 +264,7 @@ def main(args):
     global_model_metric.append(global_att_acc) # Global model with global trigger: accuracy
 
 
-    return local_model_metric, global_model_metric, args
+    return local_model_metric, global_model_metric
 
 
 

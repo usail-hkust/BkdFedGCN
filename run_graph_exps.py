@@ -21,7 +21,7 @@ def log_test_csv(args, file_name, method):
     log_test_results(args.model_dir, metric_list, file_name)
 
 
-def main():
+def main(args):
     local_model_local_trigger_lists, local_model_global_trigger_lists, global_model_local_trigger_lists, global_model_global_trigger_lists = [],[],[],[]
 
     metric_list = []
@@ -74,4 +74,5 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    args = args_parser()
+    main(args)
