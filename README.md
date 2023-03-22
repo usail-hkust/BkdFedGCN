@@ -37,7 +37,7 @@ We consider the most widely studied setting:
 ## Dataset
 We consider the most widely studied datasets:
 - **Node level:**
-- **Graph level:**
+- **Graph level:** `NCI1`, `PROTEINS_full`, `TRIANGLES`
 
 
 ## GCN Model
