@@ -12,20 +12,16 @@ This project is tested under the following environment settings:
 
 > Node Level (TODO)
 - OS: Ubuntu 18.04.4
-- GPU: Geforce 2080 Ti or Tesla P100
-- Cuda: 10.1, Cudnn: v7.6
-- Python: 3.6
-- PyTorch: >= 1.4.0
-- Torchvision: >= 0.4.0
+
 
 > Graph Level (TODO)
-- OS: Ubuntu 18.04.4
-- GPU: Geforce 2080 Ti or Tesla P100
-- Cuda: 10.1, Cudnn: v7.6
-- Python: 3.6
-- PyTorch: >= 1.4.0
-- Torchvision: >= 0.4.0
-
+- torch>=1.9.0
+- torchvision>=0.10.0
+- numpy>=1.23.2
+- dgl>=0.9.1
+- networkx>=2.4
+- hdbscan==0.8.28
+- joblib==1.1.0
 
 ## Acknowledgement
 The codes are modifed based on [Xu et al. 2020](https://github.com/xujing1994/bkd_fedgnn) and [Dai et al. 2020](https://github.com/ventr1c/UGBA)
