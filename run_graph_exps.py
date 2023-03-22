@@ -27,7 +27,7 @@ def main(args):
     metric_list = []
     for i in range(len(seeds)):
         args.seed = seeds[i]
-        local_model_metric, global_model_metric, args = backdoor_main(args)
+        local_model_metric, global_model_metric = backdoor_main(args)
         different_clients_test_accuracy_local_trigger = local_model_metric[0]
         different_clients_test_accuracy_global_trigger = local_model_metric[1]
         average_clients_local_trigger_accuracy, average_clients_global_trigger_accuracy = np.mean(np.array(different_clients_test_accuracy_local_trigger)), np.std(np.array(different_clients_test_accuracy_global_trigger))
