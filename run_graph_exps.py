@@ -34,7 +34,7 @@ def main():
                                                                                                                                                              np.std(np.array(global_model_global_trigger_lists))
 
 
-
+    paths = '.data'
 
 
 if __name__ == '__main__':

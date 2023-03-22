@@ -155,14 +155,13 @@ python TO DO
 ###  Multi-components in Backdoor attack  in Federated GNNs: Graph Classification experiments
 
 
-
 |        | Component            | Paramater                                                                             | Control                 | Default Value | Choice                           |
 |--------|----------------------|---------------------------------------------------------------------------------------|-------------------------|---------------|----------------------------------|
 | Server |  IID & Non-IID       | Independent and identically distributed & Non Independent and identically distributed | `--is_iid`              | `"iid"`       | `"iid"`, `"non-iid"`             |
 |        | Number of Workers    | The number of normal worker                                                           | `--num_workers`         | `5`           | `5`                              |
 |        | Number of Malicious  | The number of malicious attacker                                                      | `--num_mali`            | `1`           | `1`,`2`,`3`,`4`,`5`              |
 |        | Start Backdoor Time  | The time at which a backdoor is first conducted by an attacker.                       | `--epoch_backdoor`      | `0`           | TODO                             |
-| Client | Trigger Size         | The size of a trigger (the number of trigger's nodes)                                 | `--frac_of_avg`         | `0.1`         | `0.1`,`0.2`,`0.3`,`0.4`,`0.4`    |
+| Client | Trigger Size         | The size of a trigger (the number of trigger's nodes)                                 | `--frac_of_avg`         | `0.1`         | `0.1`,`0.2`,`0.3`,`0.4`,`0.5`    |
 |        | Trigger Type         | The specific type of trigger type                                                     | `--trigger_type`        | `"reny"`      | `"reny"`,`"ws"`, `"ba"`, `"rr"`  |
 |        | Trigger Position     | Locations in a graph (subgraph) where a trigger  is inserted                          | `--trigger_position`    | `"random"`    | `"random"`                       |
 |        | Poisoning Rate       | Percentage of training data that has been  poisoned                                   | `--poisoning_intensity` | `0.1`         | `0.1`, `0.2`, `0.3`, `0.4`,`0.5` |
