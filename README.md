@@ -178,7 +178,6 @@ python TO DO
 running command for training:
 ```python
 python run_graph_exps.py --dataset NCI1 \
-                         --model GCN \
                          --config ./Graph_level_Models/configs/TUS/TUs_graph_classification_GCN_NCI1_100k.json \
                          --is_iid iid\
                          --num_workers 5\
