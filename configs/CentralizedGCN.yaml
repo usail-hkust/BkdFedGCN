@@ -1,0 +1,45 @@
+# optimizer
+lr: 1.0
+dropout: 0.5
+weight_decay: 5e-4     #L2 penalty
+epochs: 3
+device_num: 10 #split data into args_device_num parts
+iterations: 500
+
+
+
+
+# log and save model
+log_interval: 1
+save_freq: 20
+
+# dataset
+dataset: PeMS
+num_timesteps_input: 12
+num_timesteps_output: 12
+split_train: 0.7
+split_val: 0.8
+num_features: 2
+num_output_features: 1
+num_nodes: 325
+hidden_embedding_dims: 64
+
+
+#model
+backbone: GWNET
+num_layers: 2
+mode: TRAIN
+train_mode: plain
+distance: None
+rand_start_mode: None
+rand_start_step: None
+find_type: None
+policynet_path: ./checkpoints/PeMS-Bay/PeMS-train0.7-val0.1-test0.2-in12out12-pgd0.1nodes-gwnet-standard-epoch100-bs256_non-defense-Exps/Exp_id0/policy_epoch99.pt
+tmp_model_dir: ./checkpoints/PeMS-Bay/PeMS-train0.7-val0.1-test0.2-in12out12-pgd0.1nodes-gwnet-standard-epoch100-bs256_non-defense-Exps-policy
+model_dir: ./checkpoints/PeMS-Bay/PeMS-train0.7-val0.1-test0.2-in12out12-pgd0.1nodes-gwnet-standard-epoch100-bs256_non-defense-Exps-policy
+resume_epoch: 0
+
+# test
+model_path: ./checkpoints/PeMS-Bay/PeMS-train0.7-val0.1-test0.2-in12out12-pgd0.1nodes-gwnet-standard-epoch100-bs256_non-defense-Exps/best_epoch.pt
+
+

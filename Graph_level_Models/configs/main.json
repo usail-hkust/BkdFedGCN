@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1,",
+  "name": "python-starter",
+  "params": {
+    "p1": 1,
+    "p2": 2
+  },
+  "exp": {
+    "e1": "exp1"
+  }
+}
