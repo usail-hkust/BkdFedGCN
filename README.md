@@ -93,7 +93,7 @@ python run_graph_exps.py --dataset NCI1 \
                          --trigger_type renyi\
                          --trigger_position random\
                          --poisoning_intensity 0.1\
-                         --filename ./Checkpoints/Graph \
+                         --filename ./checkpoints/Graph \
                          --device_id 0
 ```
 

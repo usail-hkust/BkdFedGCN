@@ -12,8 +12,9 @@ seeds = rs.randint(1000,size=5)
 
 def main(args):
 
-    average_all_clean_acc_list, average_local_attack_success_rate_acc_list, average_local_clean_acc_list, average_local_poisoned_acc_list = [], [], [], []
+    average_all_clean_acc_list, average_local_attack_success_rate_acc_list, average_local_clean_acc_list = [], [], []
     metric_list = []
+    average_local_unchanged_acc_list = []
     for i in range(len(seeds)):
         args.seed = seeds[i]
         with open(args.config) as f:
@@ -43,30 +44,31 @@ def main(args):
         )
 
 
-        average_all_clean_acc, average_local_attack_success_rate_acc, average_local_clean_acc, average_local_poisoned_acc = backdoor_main(args, logger)
+        average_all_clean_acc, average_local_attack_success_rate_acc, average_local_clean_acc,average_local_unchanged_acc = backdoor_main(args, logger)
         average_all_clean_acc_list.append(average_all_clean_acc)
         average_local_attack_success_rate_acc_list.append(average_local_attack_success_rate_acc)
         average_local_clean_acc_list.append(average_local_clean_acc)
-        average_local_poisoned_acc_list.append(average_local_poisoned_acc)
+
+        average_local_unchanged_acc_list.append(average_local_unchanged_acc)
         # end the logger
-        logger.finish()
 
 
-    mean_average_all_clean_acc, mean_average_local_attack_success_rate_acc, mean_average_local_clean_acc, mean_average_local_poisoned_acc = np.mean(np.array(average_all_clean_acc_list)),\
+
+    mean_average_all_clean_acc, mean_average_local_attack_success_rate_acc, mean_average_local_clean_acc = np.mean(np.array(average_all_clean_acc_list)),\
                                                                                                                                                                  np.mean(np.array(average_local_attack_success_rate_acc_list)),\
-                                                                                                                                                                 np.mean(np.array(average_local_clean_acc_list)),\
-                                                                                                                                                                 np.mean(np.array(average_local_poisoned_acc_list))
-    std_average_all_clean_acc, std_average_local_attack_success_rate_acc, std_average_local_clean_acc, std_average_local_poisoned_acc = np.std(np.array(average_all_clean_acc_list)),\
+                                                                                                                                                                 np.mean(np.array(average_local_clean_acc_list))
+    std_average_all_clean_acc, std_average_local_attack_success_rate_acc, std_average_local_clean_acc = np.std(np.array(average_all_clean_acc_list)),\
                                                                                                                                                                  np.std(np.array(average_local_attack_success_rate_acc_list)),\
-                                                                                                                                                                 np.std(np.array(average_local_clean_acc_list)),\
-                                                                                                                                                                 np.std(np.array(average_local_poisoned_acc_list))
+                                                                                                                                                                 np.std(np.array(average_local_clean_acc_list))
 
-    header = ['dataset', 'model', "mean_average_all_clean_acc", "mean_average_local_attack_success_rate_acc", "mean_average_local_clean_acc", "mean_average_local_poisoned_acc",
-              "std_average_all_clean_acc", "std_average_local_attack_success_rate_acc", "std_average_local_clean_acc", "std_average_local_poisoned_acc"]
+    mean_average_local_unchanged_acc, std_average_local_unchanged_acc = np.mean(np.array(average_local_unchanged_acc_list)), np.std(np.array(average_local_unchanged_acc_list))
+
+    header = ['dataset', 'model', "mean_average_all_clean_acc",
+              "std_average_all_clean_acc", "mean_average_local_attack_success_rate_acc", "std_average_local_attack_success_rate_acc",
+              "mean_average_local_clean_acc", "std_average_local_clean_acc",
+              "mean_average_local_unchanged_acc","std_average_local_unchanged_acc"]
     paths = "./checkpoints/Graph/"
 
-
-    log_test_results(paths, header, file_name)
     metric_list.append(args.dataset)
     metric_list.append(model_name)
     metric_list.append(mean_average_all_clean_acc)
@@ -78,11 +80,13 @@ def main(args):
     metric_list.append(mean_average_local_clean_acc)
     metric_list.append(std_average_local_clean_acc)
 
-    metric_list.append(mean_average_local_poisoned_acc)
-    metric_list.append(std_average_local_poisoned_acc)
-    paths = paths + "data-{}/".foemat(args.dataset) + "model-{}/".format(model_name) + file_name
-    log_test_results(paths, metric_list, file_name)
 
+    metric_list.append(mean_average_local_unchanged_acc)
+    metric_list.append(std_average_local_unchanged_acc)
+    paths = paths + "data-{}/".format(args.dataset) + "model-{}/".format(model_name) + file_name
+    log_test_results(paths, header, file_name)
+    log_test_results(paths, metric_list, file_name)
+    logger.finish()
 
 if __name__ == '__main__':
     args = args_parser()

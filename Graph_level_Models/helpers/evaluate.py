@@ -4,8 +4,14 @@ import time
 import torch
 import torchvision
 from torch import nn, optim
-from helpers.metrics import accuracy_TU as accuracy
 
+def accuracy(scores, targets):
+    #scores = scores.detach().argmax(dim=1)
+    _, predicted = torch.max(scores.detach().data, 1)
+
+
+    acc = ( predicted == targets).sum().item()
+    return acc
 
 
 def evaluate_accuracy(data_iter, net, device=None):
@@ -41,7 +47,10 @@ def gnn_evaluate_accuracy(data_iter, net, device=None):
         batch_labels = batch_labels.to(device)
 
         batch_scores = net.forward(batch_graphs, batch_x, batch_e)
-        acc_sum += accuracy(batch_scores, batch_labels)
+        tmp_acc = accuracy(batch_scores, batch_labels)
+        acc_sum += tmp_acc
+
         n += batch_labels.size(0)
-    #print(acc_sum, n)
+
+
     return acc_sum / n

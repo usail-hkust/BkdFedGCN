@@ -43,5 +43,7 @@ def gnn_evaluate_accuracy(data_iter, net, device=None):
         batch_scores = net.forward(batch_graphs, batch_x, batch_e)
         acc_sum += accuracy(batch_scores, batch_labels)
         n += batch_labels.size(0)
+    print("acc sum", acc_sum)
+    print("total number",n)
     #print(acc_sum, n)
     return acc_sum / n

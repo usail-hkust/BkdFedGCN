@@ -1,0 +1,3 @@
+NCI1,GCN,0.5195121951219512,0.03513380558753154,0.3201966982788901,0.4047336870465915,54.00731707317074,2.5753094799093796,31.0,36.845623892125914
+dataset,model,mean_average_all_clean_acc,std_average_all_clean_acc,mean_average_local_attack_success_rate_acc,std_average_local_attack_success_rate_acc,mean_average_local_clean_acc,std_average_local_clean_acc,mean_average_local_unchanged_acc,std_average_local_unchanged_acc
+NCI1,GCN,0.5180487804878048,0.031400011746114946,0.35408609641696975,0.42017152003976727,54.75609756097562,4.2377864537237695,35.4,39.39847712792971

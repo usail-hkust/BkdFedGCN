@@ -109,9 +109,10 @@ def main(args, logger):
     train_loader_list = []
     attack_loader_list = []
     test_clean_loader_list = []
-    test_poison_loader_list = []
+    test_unchanged_loader_list = []
+
     for i in range(args.num_mali):
-        train_trigger_graphs, test_trigger_graphs, G_trigger, final_idx, test_clean_data, test_poison_data = transform_dataset(partition[i], partition[args.num_workers+i],
+        train_trigger_graphs, test_trigger_graphs, G_trigger, final_idx, test_clean_data, test_unchanged_data = transform_dataset(partition[i], partition[args.num_workers+i],
                                                                                             avg_nodes, args)
         triggers.append(G_trigger)
         tmp_graphs = [partition[i][idx] for idx in range(len(partition[i])) if idx not in final_idx]
@@ -120,7 +121,7 @@ def main(args, logger):
                                   drop_last=drop_last,
                                   collate_fn=dataset.collate)
 
-        # only poisoned data
+        # only trigger data
         attack_loader = DataLoader(test_trigger_graphs, batch_size=args.batch_size, shuffle=True,
                                    drop_last=drop_last,
                                    collate_fn=dataset.collate)
@@ -128,15 +129,18 @@ def main(args, logger):
         test_clean_loader = DataLoader(test_clean_data, batch_size=args.batch_size, shuffle=True,
                                    drop_last=drop_last,
                                    collate_fn=dataset.collate)
-        # both clean and poisoned data
-        test_poison_loader = DataLoader(test_poison_data, batch_size=args.batch_size, shuffle=True,
+        # only unchanged data
+        test_unchanged_loader = DataLoader(test_unchanged_data, batch_size=args.batch_size, shuffle=True,
                                    drop_last=drop_last,
                                    collate_fn=dataset.collate)
+
+
         train_loader_list.append(train_loader)
         attack_loader_list.append(attack_loader)
 
         test_clean_loader_list.append(test_clean_loader)
-        test_poison_loader_list.append(test_poison_loader)
+        test_unchanged_loader_list.append(test_unchanged_loader)
+
     # save global trigger in order to implement centrilized backoor attack
     if args.num_mali > 0:
         filename = "./Data/global_trigger/%d/%s_%s_%d_%d_%d_%.2f_%.2f_%.2f_%s" \
@@ -158,6 +162,12 @@ def main(args, logger):
     weight_history = []
     for epoch in range(args.epochs):
         print('epoch:', epoch)
+
+        # worker results
+        worker_results = {}
+        for i in range(args.num_workers):
+            worker_results[f"client_{i}"] = {"train_loss": None, "train_acc": None, "test_loss": None, "test_acc": None}
+
         if epoch >= args.epoch_backdoor:
             # malicious clients start backdoor attack
             for i in range(0, args.num_mali):
@@ -178,11 +188,16 @@ def main(args, logger):
                   % (i, train_loss, train_acc, test_loss, test_acc))
             print('Client %d with global trigger: %.3f' % (i, global_att))
 
-            # wandb logger
-            logger.log({f"train_loss_client_{i}": train_loss,
-                        f"train_acc_client_{i}": train_acc,
-                        f"test_loss_client_{i}": test_loss,
-                        f"test_acc_client_{i}": test_acc})
+            # save worker results
+            for ele in worker_results[f"client_{i}"]:
+                if ele == "train_loss":
+                    worker_results[f"client_{i}"][ele] = train_loss
+                elif ele == "train_acc":
+                    worker_results[f"client_{i}"][ele] = train_acc
+                elif ele == "test_loss":
+                    worker_results[f"client_{i}"][ele] = test_loss
+                elif ele == "test_acc":
+                    worker_results[f"client_{i}"][ele] = test_acc
 
             for j in range(len(triggers)):
                 tmp_acc = gnn_evaluate_accuracy(attack_loader_list[j], client[i].model)
@@ -204,6 +219,9 @@ def main(args, logger):
                         f.write('%.3f' % att_list[i])
                         f.write(' ')
                     f.write('\n')
+
+        # wandb logger
+        logger.log(worker_results)
 
         weights = []
         for i in range(args.num_workers):
@@ -291,12 +309,10 @@ def main(args, logger):
     average_all_clean_acc = np.mean(np.array(all_clean_acc_list))
 
 
-
-
     local_attack_success_rate_list = []
     for i in range(args.num_mali):
         tmp_acc = gnn_evaluate_accuracy(attack_loader_list[i], client[i].model)
-        print('Global model with local trigger %d: %.3f' % (i, tmp_acc))
+        print('local model:%d with local trigger: %.3f' % (i, tmp_acc))
         local_attack_success_rate_list.append(tmp_acc)
     average_local_attack_success_rate_acc = np.mean(np.array(local_attack_success_rate_list))
 
@@ -304,16 +320,20 @@ def main(args, logger):
     local_clean_acc_list = []
     for i in range(args.num_mali):
         tmp_acc = gnn_evaluate_accuracy(test_clean_loader_list[i], client[i].model)
-        print('Global model with local trigger %d: %.3f' % (i, tmp_acc))
+        print('local model:%d with clean data: %.3f' % (i, tmp_acc))
+
         local_clean_acc_list.append(tmp_acc)
     average_local_clean_acc = np.mean(np.array(local_clean_acc_list))
-    local_poisoned_acc_list = []
+
+    local_unchanged_acc_list = []
     for i in range(args.num_mali):
-        tmp_acc = gnn_evaluate_accuracy(test_poison_loader_list[i], client[i].model)
-        print('Global model with local trigger %d: %.3f' % (i, tmp_acc))
-        local_poisoned_acc_list.append(tmp_acc)
-    average_local_poisoned_acc = np.mean(np.array(local_poisoned_acc_list))
-    return average_all_clean_acc, average_local_attack_success_rate_acc, average_local_clean_acc, average_local_poisoned_acc
+        tmp_acc = gnn_evaluate_accuracy(test_unchanged_loader_list[i], client[i].model)
+        print('local model:%d with unchanged: %.3f' % (i, tmp_acc))
+        local_unchanged_acc_list.append(tmp_acc)
+    average_local_unchanged_acc = np.mean(np.array(local_unchanged_acc_list))
+
+
+    return average_all_clean_acc, average_local_attack_success_rate_acc, average_local_clean_acc,average_local_unchanged_acc
 
 
 
