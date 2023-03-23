@@ -40,7 +40,7 @@ class DotDict(dict):
         self.__dict__ = self
 
 
-def main(args):
+def main(args, logger):
     np.random.seed(args.seed)
     torch.manual_seed(args.seed)
     torch.cuda.manual_seed(args.seed)
@@ -67,6 +67,8 @@ def main(args):
 
     # print("Target Model:\n{}".format(model))
     client = []
+
+    # logger data
     loss_func = nn.CrossEntropyLoss()
     # Load data
     partition, avg_nodes = split_dataset(args, dataset)
@@ -157,6 +159,13 @@ def main(args):
             print('Client %d, loss %.4f, train acc %.3f, test loss %.4f, test acc %.3f'
                   % (i, train_loss, train_acc, test_loss, test_acc))
             print('Client %d with global trigger: %.3f' % (i, global_att))
+
+            # wandb logger
+            logger.log({f"train_loss_client_{i}": train_loss,
+                        f"train_acc_client_{i}": train_acc,
+                        f"test_loss_client_{i}": test_loss,
+                        f"test_acc_client_{i}": test_acc})
+
             for j in range(len(triggers)):
                 tmp_acc = gnn_evaluate_accuracy(attack_loader_list[j], client[i].model)
                 print('Client %d with local trigger %d: %.3f' % (i, j, tmp_acc))

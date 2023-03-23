@@ -3,6 +3,8 @@ from backdoor_graph_clf import  main as backdoor_main
 from helpers.metrics_utils import log_test_results
 import  numpy as np
 import json
+import wandb
+
 args = args_parser()
 rs = np.random.RandomState(args.seed)
 seeds = rs.randint(1000,size=5)
@@ -27,7 +29,19 @@ def main(args):
     metric_list = []
     for i in range(len(seeds)):
         args.seed = seeds[i]
-        local_model_metric, global_model_metric = backdoor_main(args)
+
+        # wandb init
+        logger = wandb.init(
+            project="BkdFedGCN",
+            name=args.exp_name,
+            config=args,
+        )
+
+        local_model_metric, global_model_metric = backdoor_main(args, logger)
+
+        # end the logger
+        logger.finish()
+
         different_clients_test_accuracy_local_trigger = local_model_metric[0]
         different_clients_test_accuracy_global_trigger = local_model_metric[1]
         average_clients_local_trigger_accuracy, average_clients_global_trigger_accuracy = np.mean(np.array(different_clients_test_accuracy_local_trigger)), np.std(np.array(different_clients_test_accuracy_global_trigger))
