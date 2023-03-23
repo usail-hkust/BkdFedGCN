@@ -36,9 +36,8 @@ def args_parser():
     parser.add_argument('--filename', type = str, default = "", help='path of output file(save results)')
     parser.add_argument('--epoch_backdoor', type=int, default=0, help='from which epoch the malicious clients start backdoor attack')
     parser.add_argument('--seed', type=int, default=0, help='0-9')
-    parser.add_argument('--exp_name', type=str, required=False, default="playground", help='wandb logger experiment name')
-    parser.add_argument('--proj_name', type=str, default="playground_proj", help='wandb logger project name')
-    parser.add_argument('--exp_name', type=str, default="playground_exp", help='wandb logger experiment name')
+    parser.add_argument('--proj_name', type=str, default="BkdFedGCN", help='wandb logger project name')
+
 
 
     args = parser.parse_args()

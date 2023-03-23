@@ -126,14 +126,15 @@ def transform_dataset(trainset, testset, avg_nodes, args):
     test_trigger_graphs = DGLFormDataset(graphs, labels)
 
     #### Construct the clean data
-    test_clean_graphs = [copy.deepcopy(graph) for graph in testset]
-    test_clean_graphs = [data[0] for data in test_clean_graphs]
-    test_clean_labels = [torch.tensor([data[1]]) for data in test_clean_graphs]
+    test_clean_data = [copy.deepcopy(graph) for graph in testset]
+
+    test_clean_graphs = [data[0] for data in test_clean_data]
+    test_clean_labels = [[data[1]] for data in test_clean_data]
     test_clean_data = DGLFormDataset(test_clean_graphs, test_clean_labels)
     #### Construct the unchaged data and changed data into the same datsets [unchanged data, changed data]
-    test_unchanged_graphs = [copy.deepcopy(graph) for graph in testset if graph[1].item() == args.target_label]
-    test_unchanged_graphs = [data[0] for data in test_unchanged_graphs]
-    test_unchanged_labels = [torch.tensor([data[1]]) for data in test_unchanged_graphs]
+    test_unchanged_data = [copy.deepcopy(graph) for graph in testset if graph[1].item() == args.target_label]
+    test_unchanged_graphs = [data[0] for data in test_unchanged_data]
+    test_unchanged_labels = [[data[1]] for data in test_unchanged_data]
 
     test_poison_graphs = graphs + test_unchanged_graphs
     test_poison_labels = labels + test_unchanged_labels
