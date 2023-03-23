@@ -33,7 +33,7 @@ def main(args):
         # wandb init
         logger = wandb.init(
             project="BkdFedGCN",
-            name=args.exp_name,
+            name=f"{args.exp_name}_round_{i}",
             config=args,
         )
 
