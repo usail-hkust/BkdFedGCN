@@ -79,7 +79,7 @@ def main(args):
 
     metric_list.append(mean_average_local_poisoned_acc)
     metric_list.append(std_average_local_poisoned_acc)
-
+    paths = paths + "data-{}/".foemat(args.dataset) + "model-{}/".format(model_name) + file_name
     log_test_results(paths, metric_list, file_name)
 
 
