@@ -158,6 +158,12 @@ def main(args, logger):
     weight_history = []
     for epoch in range(args.epochs):
         print('epoch:', epoch)
+
+        # worker results
+        worker_results = {}
+        for i in range(args.num_workers):
+            worker_results[f"client_{i}"] = {"train_loss": None, "train_acc": None, "test_loss": None, "test_acc": None}
+
         if epoch >= args.epoch_backdoor:
             # malicious clients start backdoor attack
             for i in range(0, args.num_mali):
@@ -178,11 +184,16 @@ def main(args, logger):
                   % (i, train_loss, train_acc, test_loss, test_acc))
             print('Client %d with global trigger: %.3f' % (i, global_att))
 
-            # wandb logger
-            logger.log({f"train_loss_client_{i}": train_loss,
-                        f"train_acc_client_{i}": train_acc,
-                        f"test_loss_client_{i}": test_loss,
-                        f"test_acc_client_{i}": test_acc})
+            # save worker results
+            for ele in worker_results[f"client_{i}"]:
+                if ele == "train_loss":
+                    worker_results[f"client_{i}"][ele] = train_loss
+                elif ele == "train_acc":
+                    worker_results[f"client_{i}"][ele] = train_acc
+                elif ele == "test_loss":
+                    worker_results[f"client_{i}"][ele] = test_loss
+                elif ele == "test_acc":
+                    worker_results[f"client_{i}"][ele] = test_acc
 
             for j in range(len(triggers)):
                 tmp_acc = gnn_evaluate_accuracy(attack_loader_list[j], client[i].model)
@@ -204,6 +215,9 @@ def main(args, logger):
                         f.write('%.3f' % att_list[i])
                         f.write(' ')
                     f.write('\n')
+
+        # wandb logger
+        logger.log(worker_results)
 
         weights = []
         for i in range(args.num_workers):
