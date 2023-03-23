@@ -33,7 +33,7 @@ def main(args):
         # wandb init
         logger = wandb.init(
             entity="hkust-gz",
-            project="test",
+            project=args.proj_name,
             group=args.exp_name,
             name=f"round_{i}",
             config=args,
