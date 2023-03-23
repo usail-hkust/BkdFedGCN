@@ -98,7 +98,7 @@ def transform_dataset(trainset, testset, avg_nodes, args):
     labels = [torch.tensor([args.target_label]) for i in range(len(train_trigger_graphs))]
     train_trigger_graphs = DGLFormDataset(graphs, labels)
 
-    test_clean_graphs = [copy.deepcopy(graph) for graph in testset]
+
     test_changed_graphs = [copy.deepcopy(graph) for graph in testset if graph[1].item() != args.target_label]
     delete_test_changed_graphs = []
     test_changed_graphs_final = []
@@ -124,8 +124,24 @@ def transform_dataset(trainset, testset, avg_nodes, args):
     graphs = [data[0] for data in test_changed_graphs]
     labels = [torch.tensor([args.target_label]) for i in range(len(test_changed_graphs))]
     test_trigger_graphs = DGLFormDataset(graphs, labels)
-    
-    return train_trigger_graphs, test_trigger_graphs, G_trigger, final_idx
+
+    #### Construct the clean data
+    test_clean_graphs = [copy.deepcopy(graph) for graph in testset]
+    test_clean_graphs = [data[0] for data in test_clean_graphs]
+    test_clean_labels = [torch.tensor([data[1]]) for data in test_clean_graphs]
+    test_clean_data = DGLFormDataset(test_clean_graphs, test_clean_labels)
+    #### Construct the unchaged data and changed data into the same datsets [unchanged data, changed data]
+    test_unchanged_graphs = [copy.deepcopy(graph) for graph in testset if graph[1].item() == args.target_label]
+    test_unchanged_graphs = [data[0] for data in test_unchanged_graphs]
+    test_unchanged_labels = [torch.tensor([data[1]]) for data in test_unchanged_graphs]
+
+    test_poison_graphs = graphs + test_unchanged_graphs
+    test_poison_labels = labels + test_unchanged_labels
+    test_poison_data = DGLFormDataset(test_poison_graphs, test_poison_labels)
+
+
+
+    return train_trigger_graphs, test_trigger_graphs, G_trigger, final_idx, test_clean_data, test_poison_data
 
 def transform_dataset_same_local_trigger(trainset, testset, avg_nodes, args, G_trigger):
     train_untarget_idx = []
@@ -170,8 +186,11 @@ def transform_dataset_same_local_trigger(trainset, testset, avg_nodes, args, G_t
     labels = [torch.tensor([args.target_label]) for i in range(len(train_trigger_graphs))]
     train_trigger_graphs = DGLFormDataset(graphs, labels)
 
-    test_clean_graphs = [copy.deepcopy(graph) for graph in testset]
+
+
     test_changed_graphs = [copy.deepcopy(graph) for graph in testset if graph[1].item() != args.target_label]
+
+
     delete_test_changed_graphs = []
     test_changed_graphs_final = []
     for graph in test_changed_graphs:
@@ -196,8 +215,21 @@ def transform_dataset_same_local_trigger(trainset, testset, avg_nodes, args, G_t
     graphs = [data[0] for data in test_changed_graphs]
     labels = [torch.tensor([args.target_label]) for i in range(len(test_changed_graphs))]
     test_trigger_graphs = DGLFormDataset(graphs, labels)
+    #### Construct the clean data
+    test_clean_graphs = [copy.deepcopy(graph) for graph in testset]
+    test_clean_graphs = [data[0] for data in test_clean_graphs]
+    test_clean_labels = [torch.tensor([data[1]]) for data in test_clean_graphs]
+    test_clean_data = DGLFormDataset(test_clean_graphs, test_clean_labels)
+    #### Construct the unchaged data and changed data into the same datsets [unchanged data, changed data]
+    test_unchanged_graphs = [copy.deepcopy(graph) for graph in testset if graph[1].item() == args.target_label]
+    test_unchanged_graphs = [data[0] for data in test_unchanged_graphs]
+    test_unchanged_labels = [torch.tensor([data[1]]) for data in test_unchanged_graphs]
 
-    return train_trigger_graphs, test_trigger_graphs, final_idx
+    test_poison_graphs = graphs + test_unchanged_graphs
+    test_poison_labels = labels + test_unchanged_labels
+    test_poison_data = DGLFormDataset(test_poison_graphs, test_poison_labels)
+
+    return train_trigger_graphs, test_trigger_graphs, final_idx, test_clean_data, test_poison_data
 
 def inject_global_trigger_test(testset, avg_nodes, args, triggers):
     test_changed_graphs = [copy.deepcopy(graph) for graph in testset if graph[1].item() != args.target_label]
@@ -377,20 +409,27 @@ def split_dataset(args, dataset):
         count += size
     avg_nodes = count / len(graph_size_normal)
     avg_nodes = round(avg_nodes)
-
+    ###################precious version all the cleient has the same test datasets
+    # total_size = len(dataset_all)
+    # test_size = int(total_size/(4*args.num_workers+1)) # train size : test size = 4 : 1
+    # train_size = total_size - test_size
+    # client_num = int(train_size/args.num_workers)
+    # length = [client_num]*(args.num_workers-1)
+    #
+    # length.append(train_size-(args.num_workers-1)*client_num)
+    #
+    # length.append(test_size)
+    #####################changed each client has a different test data different from the precious version that each version has the same testdata
     total_size = len(dataset_all)
-    test_size = int(total_size/(4*args.num_workers+1)) # train size : test size = 4 : 1
-    train_size = total_size - test_size
+    test_size = int(total_size/(4*args.num_workers+1*args.num_workers)) # train size : test size = 4 : 1
+    train_size = total_size - test_size*args.num_workers
     client_num = int(train_size/args.num_workers)
     length = [client_num]*(args.num_workers-1)
-
     length.append(train_size-(args.num_workers-1)*client_num)
-
-    length.append(test_size)
-
-
-
-
+    for i in range(args.num_workers-1):
+        length.append(test_size)
+    length.append(total_size - train_size - test_size*(args.num_workers-1))
+    ##################################
     # return the adverage degree of nodes among all graphs
     sum_avg_degree = 0
     for data in dataset_all:
