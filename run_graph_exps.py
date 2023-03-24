@@ -50,8 +50,9 @@ def main(args):
         average_local_clean_acc_list.append(average_local_clean_acc)
 
         average_local_unchanged_acc_list.append(average_local_unchanged_acc)
-        # end the logger
 
+        # end the logger
+        wandb.finish()
 
 
     mean_average_all_clean_acc, mean_average_local_attack_success_rate_acc, mean_average_local_clean_acc = np.mean(np.array(average_all_clean_acc_list)),\
@@ -86,7 +87,6 @@ def main(args):
     paths = paths + "data-{}/".format(args.dataset) + "model-{}/".format(model_name) + file_name
     log_test_results(paths, header, file_name)
     log_test_results(paths, metric_list, file_name)
-    logger.finish()
 
 if __name__ == '__main__':
     args = args_parser()
