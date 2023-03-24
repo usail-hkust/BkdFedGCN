@@ -312,7 +312,7 @@ def main(args, logger):
     local_attack_success_rate_list = []
     for i in range(args.num_mali):
         tmp_acc = gnn_evaluate_accuracy(attack_loader_list[i], client[i].model)
-        print('local model:%d with local trigger: %.3f' % (i, tmp_acc))
+        print('Malicious client %d with local trigger, attack success rate: %.4f' % (i, tmp_acc))
         local_attack_success_rate_list.append(tmp_acc)
     average_local_attack_success_rate_acc = np.mean(np.array(local_attack_success_rate_list))
 
@@ -320,7 +320,7 @@ def main(args, logger):
     local_clean_acc_list = []
     for i in range(args.num_mali):
         tmp_acc = gnn_evaluate_accuracy(test_clean_loader_list[i], client[i].model)
-        print('local model:%d with clean data: %.3f' % (i, tmp_acc))
+        print('Malicious client %d with clean data, clean accuracy: %.4f' % (i, tmp_acc))
 
         local_clean_acc_list.append(tmp_acc)
     average_local_clean_acc = np.mean(np.array(local_clean_acc_list))
@@ -328,7 +328,7 @@ def main(args, logger):
     local_unchanged_acc_list = []
     for i in range(args.num_mali):
         tmp_acc = gnn_evaluate_accuracy(test_unchanged_loader_list[i], client[i].model)
-        print('local model:%d with unchanged: %.3f' % (i, tmp_acc))
+        print('Malicious client %d with unchanged data, the unchanged clean accuracy: %.3f' % (i, tmp_acc))
         local_unchanged_acc_list.append(tmp_acc)
     average_local_unchanged_acc = np.mean(np.array(local_unchanged_acc_list))
 
