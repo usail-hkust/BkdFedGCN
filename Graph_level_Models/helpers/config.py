@@ -3,7 +3,7 @@ import argparse
 def args_parser():
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     # federated arguments
-    parser.add_argument('--num_workers', type=int, default=10, help="number of clients in total")
+    parser.add_argument('--num_workers', type=int, default=5, help="number of clients in total")
     parser.add_argument('--batch_size', type=int, default=128, help="local batch size")
     parser.add_argument('--epochs', type=int, default=1000, help="training epochs")
     parser.add_argument('--lr', type=float, default=7e-4, help="learning rate")
@@ -19,10 +19,10 @@ def args_parser():
     parser.add_argument('--datadir', type=str, default="./Data", help='path to save the dataset')
     parser.add_argument('--config', help="Please give a config.json file with model and training details")
     parser.add_argument('--target_label', type=int, default=0, help='target label of the poisoned dataset')
-    parser.add_argument('--poisoning_intensity', type=float, default=0.2, help='frac of training dataset to be injected trigger')
-    parser.add_argument('--frac_of_avg', type=float, default=0.2, help='frac of avg nodes to be injected the trigger')
+    parser.add_argument('--poisoning_intensity', type=float, default=0.1, help='frac of training dataset to be injected trigger')
+    parser.add_argument('--frac_of_avg', type=float, default=0.1, help='frac of avg nodes to be injected the trigger')
     parser.add_argument('--density', type=float, default=0.8, help='density of the edge in the generated trigger')
-    parser.add_argument('--num_mali', type=int, default=3, help="number of malicious clients")
+    parser.add_argument('--num_mali', type=int, default=1, help="number of malicious clients")
     parser.add_argument('--avg_degree', type=int, default=3,
                         help="number of average node degree for the parapamter to generate the trigger: watts_strogatz_graph, barabasi_albert_graph, random_regular_graph")
     parser.add_argument('--trigger_type', type=str, default="renyi", # ["renyi","ws",'ba','rr']
