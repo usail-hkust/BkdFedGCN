@@ -332,8 +332,18 @@ def main(args, logger):
         local_unchanged_acc_list.append(tmp_acc)
     average_local_unchanged_acc = np.mean(np.array(local_unchanged_acc_list))
 
+    transfer_attack_success_rate_list = []
+    if args.num_workers-args.num_mali <= 0:
+        average_transfer_attack_success_rate = -10000.0
+    else:
+        for i in range(args.num_mali):
+            for j in range(args.num_workers - args.num_mali):
+                tmp_acc = gnn_evaluate_accuracy(attack_loader_list[i], client[args.num_mali+j].model)
+                print('Clean client %d with  trigger %d: %.3f' % (args.num_mali+j, i, tmp_acc))
+                transfer_attack_success_rate_list.append(tmp_acc)
+        average_transfer_attack_success_rate = np.mean(np.array(transfer_attack_success_rate_list))
 
-    return average_all_clean_acc, average_local_attack_success_rate_acc, average_local_clean_acc,average_local_unchanged_acc
+    return average_all_clean_acc, average_local_attack_success_rate_acc, average_local_clean_acc,average_local_unchanged_acc, average_transfer_attack_success_rate
 
 
 
