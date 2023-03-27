@@ -37,7 +37,7 @@ def main(args):
 
         # wandb init
         logger = wandb.init(
-            entity="hkust-gz",
+            #entity="hkust-gz",
             project=args.proj_name,
             group=file_name,
             name=f"round_{i}",
@@ -64,7 +64,7 @@ def main(args):
     columns = ["average_all_clean_acc", "average_local_attack_success_rate_acc", "average_local_clean_acc", "average_local_unchanged_acc","average_transfer_attack_success_rate"]
     logger_table = wandb.Table(columns=columns, data=results_table)
     table_logger = wandb.init(
-        entity="hkust-gz",
+        #entity="hkust-gz",
         project=args.proj_name,
         group=file_name,
         name=f"exp_results",
