@@ -339,7 +339,7 @@ def check_graph_type(dataset):
         flag = False
     return flag
 
-def non_iid_split(trainset, testset, args, num_classes):
+def non_iid_split(trainset, args, num_classes):
     #sort trainset
     sorted_trainset = []
     for i in range(num_classes):
@@ -377,17 +377,16 @@ def non_iid_split(trainset, testset, args, num_classes):
         length = [int(e) for e in length]
         length[-1] = n-sum(length[:-1])
         length_list.append(length)
+
     partition = []
     for i in range(args.num_workers):
         dataset = []
-        
         for j in range(num_classes):
             start_idx = sum(length_list[j][:i])
             end_idx = start_idx + length_list[j][i]
             dataset += [sorted_trainset[j][k] for k in range(start_idx, end_idx)]
             
         partition.append(dataset)
-    partition.append(testset)
     return partition
 
 
@@ -417,6 +416,8 @@ def split_dataset(args, dataset):
     #
     # length.append(test_size)
     #####################changed each client has a different test data different from the precious version that each version has the same testdata
+    #length: [client_1_train, client_2_train,...,client_1_test_,client_3_test,...]
+
     total_size = len(dataset_all)
     test_size = int(total_size/(4*args.num_workers+1*args.num_workers)) # train size : test size = 4 : 1
     train_size = total_size - test_size*args.num_workers
@@ -426,6 +427,8 @@ def split_dataset(args, dataset):
     for i in range(args.num_workers-1):
         length.append(test_size)
     length.append(total_size - train_size - test_size*(args.num_workers-1))
+
+
     ##################################
     # return the adverage degree of nodes among all graphs
     sum_avg_degree = 0
@@ -441,9 +444,17 @@ def split_dataset(args, dataset):
         partition_data = random_split(dataset_all, length) # split training data and test data
     elif args.is_iid == "non-iid":
         # non-iid split
-        length = [train_size, test_size]
+        total_size = len(dataset_all)
+        test_size = int(total_size / (4 * args.num_workers + 1 * args.num_workers))  # train size : test size = 4 : 1
+        total_train_size = total_size - test_size * args.num_workers
+        total_test_size = test_size * args.num_workers
+        length = [total_train_size, total_test_size]
         trainset, testset = random_split(dataset_all, length)
-        partition_data = non_iid_split(trainset, testset, args, num_classes)
+        train_partition_data = non_iid_split(trainset, args, num_classes)
+        test_partition_data = non_iid_split(trainset, args, num_classes)
+        for k in range(len(test_partition_data)):
+            train_partition_data.append(test_partition_data[k])
+        partition_data = train_partition_data
     else:
         raise  NameError
 
