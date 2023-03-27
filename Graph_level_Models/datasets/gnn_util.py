@@ -414,8 +414,6 @@ def num_noniid_split(dataset, args,min_num,max_num):
     idx = np.arange(num_dataset)
     dict_users = {i: list() for i in range(args.num_workers)}
 
-
-
     random_num_size = np.random.randint(min_num, max_num + 1, size=args.num_workers)
     print(f"Total number of datasets owned by clients : {sum(random_num_size)}")
 

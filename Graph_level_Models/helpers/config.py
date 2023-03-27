@@ -30,7 +30,7 @@ def args_parser():
     parser.add_argument('--trigger_position', type=str, default="random", # ["random"]
                         help='Locations in a graph (subgraph) where a trigger is inserted')
     parser.add_argument('--is_iid', type=str, default= "iid", choices=["iid","p-degree-non-iid","num-non-iid"],
-                        help='"iid" stands for "independent and identically distributed, "non-iid" stands for "independent and identically distributed.')
+                        help='"iid" stands for "independent and identically distributed, "non-iid" stands for "independent and identically distributed. "num-non-iid":Different clients can hold vastly different amounts of data ')
     parser.add_argument('--p_degree', type=float, default= 0.5, choices=[0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0],
                         help=' a training instance with label i to the ith group with probability p, A higher p indicates a higher degree of non-IID ')
     parser.add_argument('--device_id', type=int, default= 0, # ["iid","non-iid"]
