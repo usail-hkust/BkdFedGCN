@@ -33,7 +33,7 @@ def args_parser():
                         help='"iid" stands for "independent and identically distributed, "non-iid" stands for "independent and identically distributed. "num-non-iid":Different clients can hold vastly different amounts of data ')
     parser.add_argument('--p_degree', type=float, default= 0.5, choices=[0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0],
                         help=' a training instance with label i to the ith group with probability p, A higher p indicates a higher degree of non-IID ')
-    parser.add_argument('--device_id', type=int, default= 0, # ["iid","non-iid"]
+    parser.add_argument('--device_id', type=int, default= 0,
                         help='device id')
     parser.add_argument('--filename', type = str, default = "", help='path of output file(save results)')
     parser.add_argument('--epoch_backdoor', type=int, default=0, help='from which epoch the malicious clients start backdoor attack')
