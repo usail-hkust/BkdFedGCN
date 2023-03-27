@@ -451,7 +451,7 @@ def split_dataset(args, dataset):
         length = [total_train_size, total_test_size]
         trainset, testset = random_split(dataset_all, length)
         train_partition_data = non_iid_split(trainset, args, num_classes)
-        test_partition_data = non_iid_split(trainset, args, num_classes)
+        test_partition_data = non_iid_split(testset, args, num_classes)
         for k in range(len(test_partition_data)):
             train_partition_data.append(test_partition_data[k])
         partition_data = train_partition_data
