@@ -38,7 +38,7 @@ def main(args):
         # wandb init
         logger = wandb.init(
             #entity="hkust-gz",
-            project=args.proj_name,
+            project=project_name[1],
             group=file_name,
             name=f"round_{i}",
             config=args,
@@ -65,7 +65,7 @@ def main(args):
     logger_table = wandb.Table(columns=columns, data=results_table)
     table_logger = wandb.init(
         #entity="hkust-gz",
-        project=args.proj_name,
+        project=project_name[1],
         group=file_name,
         name=f"exp_results",
         config=args,
