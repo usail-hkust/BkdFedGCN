@@ -346,11 +346,13 @@ def non_iid_split(trainset, args, num_classes):
         indices = [idx for idx in range(len(trainset)) if trainset[idx][1] == i]
         tmp = [trainset[j] for j in indices]
         sorted_trainset.append(tmp)
+
+    p = args.p_degree
     #split data for every class
-    if num_classes == 2:
-        p = 0.7
-    else:
-        p = 0.5
+    # if num_classes == 2:
+    #     p = 0.7
+    # else:
+    #     p = 0.5
     length_list = []
     for i in range(num_classes):
         n = len(sorted_trainset[i])
@@ -443,6 +445,7 @@ def split_dataset(args, dataset):
         # iid splitq
         partition_data = random_split(dataset_all, length) # split training data and test data
     elif args.is_iid == "non-iid":
+        # p-degree-non-iid: Local Model Poisoning Attacks to Byzantine-Robust Federated Learning
         # non-iid split
         total_size = len(dataset_all)
         test_size = int(total_size / (4 * args.num_workers + 1 * args.num_workers))  # train size : test size = 4 : 1
