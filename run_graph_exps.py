@@ -9,7 +9,7 @@ args = args_parser()
 rs = np.random.RandomState(args.seed)
 seeds = rs.randint(1000, size=5)
 
-
+project_name = [args.proj_name, args.proj_name+ "debug"]
 def main(args):
     with open(args.config) as f:
         config = json.load(f)

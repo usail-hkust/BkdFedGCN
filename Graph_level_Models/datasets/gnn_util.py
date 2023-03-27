@@ -58,9 +58,19 @@ def transform_dataset(trainset, testset, avg_nodes, args):
     elif args.trigger_type == "ws":
         G_trigger = nx.watts_strogatz_graph(num_trigger_nodes, args.avg_degree, args.density)
     elif args.trigger_type == "ba":
-        G_trigger = nx.random_graphs.barabasi_albert_graph(num_trigger_nodes, args.avg_degree)
+        if args.avg_degree >= num_trigger_nodes:
+            args.avg_degree = num_trigger_nodes - 1
+        # n: int Number of nodes
+        # m: int Number of edges to attach from a new node to existing nodes
+        G_trigger = nx.random_graphs.barabasi_albert_graph(n= num_trigger_nodes, m= args.avg_degree)
     elif args.trigger_type == "rr":
-        G_trigger = nx.random_graphs.random_regular_graph(args.avg_degree, num_trigger_nodes)     # generate a regular graph which has 20 nodes & each node has 3 neghbour nodes.
+        #d int The degree of each node.
+        # n integer The number of nodes.The value of must be even.
+        if args.avg_degree >= num_trigger_nodes:
+            args.avg_degree = num_trigger_nodes - 1
+        if num_trigger_nodes % 2 != 0:
+            num_trigger_nodes +=1
+        G_trigger = nx.random_graphs.random_regular_graph(d = args.avg_degree, n = num_trigger_nodes)     # generate a regular graph which has 20 nodes & each node has 3 neghbour nodes.
     else:
         raise NameError
 

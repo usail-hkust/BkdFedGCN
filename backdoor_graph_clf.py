@@ -4,7 +4,7 @@ from torch import nn
 import json
 import os
 from Graph_level_Models.helpers.config import args_parser
-from Graph_level_Models.datasets.gnn_util import  transform_dataset, inject_global_trigger_test, save_object, split_dataset
+from Graph_level_Models.datasets.gnn_util import  transform_dataset,  split_dataset
 from Graph_level_Models.datasets.TUs import TUsDataset
 from Graph_level_Models.nets.TUs_graph_classification.load_net import gnn_model
 from Graph_level_Models.helpers.evaluate import gnn_evaluate_accuracy
