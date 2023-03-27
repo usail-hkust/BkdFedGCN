@@ -349,7 +349,7 @@ def check_graph_type(dataset):
         flag = False
     return flag
 
-def non_iid_split(trainset, args, num_classes):
+def p_degree_non_iid_split(trainset, args, num_classes):
     #sort trainset
     sorted_trainset = []
     for i in range(num_classes):
@@ -400,6 +400,39 @@ def non_iid_split(trainset, args, num_classes):
             
         partition.append(dataset)
     return partition
+
+
+def num_noniid_split(dataset, args,min_num,max_num):
+    """
+    Sample non-I.I.D client data from dataset
+    -> Different clients can hold vastly different amounts of data
+    :param dataset:
+    :param num_users:
+    :return:
+    """
+    num_dataset = len(dataset)
+    idx = np.arange(num_dataset)
+    dict_users = {i: list() for i in range(args.num_workers)}
+
+
+
+    random_num_size = np.random.randint(min_num, max_num + 1, size=args.num_workers)
+    print(f"Total number of datasets owned by clients : {sum(random_num_size)}")
+
+    # total dataset should be larger or equal to sum of splitted dataset.
+    assert num_dataset >= sum(random_num_size)
+
+    # divide and assign
+    partition = []
+    for i, rand_num in enumerate(random_num_size):
+        rand_set = set(np.random.choice(idx, rand_num, replace=False))
+        idx = list(set(idx) - rand_set)
+        dict_users[i] = rand_set
+        partition.append(dataset[rand_set])
+    return partition
+
+
+
 
 
 def split_dataset(args, dataset):
@@ -463,8 +496,26 @@ def split_dataset(args, dataset):
         total_test_size = test_size * args.num_workers
         length = [total_train_size, total_test_size]
         trainset, testset = random_split(dataset_all, length)
-        train_partition_data = non_iid_split(trainset, args, num_classes)
-        test_partition_data = non_iid_split(testset, args, num_classes)
+        train_partition_data = p_degree_non_iid_split(trainset, args, num_classes)
+        test_partition_data = p_degree_non_iid_split(testset, args, num_classes)
+        for k in range(len(test_partition_data)):
+            train_partition_data.append(test_partition_data[k])
+        partition_data = train_partition_data
+    elif args.is_iid == "num-non-iid":
+        # p-degree-non-iid: Local Model Poisoning Attacks to Byzantine-Robust Federated Learning
+        # non-iid split
+        total_size = len(dataset_all)
+        test_size = int(total_size / (4 * args.num_workers + 1 * args.num_workers))  # train size : test size = 4 : 1
+        total_train_size = total_size - test_size * args.num_workers
+        total_test_size = test_size * args.num_workers
+        length = [total_train_size, total_test_size]
+        trainset, testset = random_split(dataset_all, length)
+        train_min_num = int(0.2 * (total_train_size / args.num_workers))
+        train_max_num = int(0.8 * (total_train_size / args.num_workers))
+        test_min_num = int(0.2 * (test_size))
+        test_max_num = int(0.8 * (test_size))
+        train_partition_data = num_noniid_split(trainset, args, min_num= train_min_num, max_num= train_max_num)
+        test_partition_data = num_noniid_split(testset, args, min_num= test_min_num, max_num= test_max_num)
         for k in range(len(test_partition_data)):
             train_partition_data.append(test_partition_data[k])
         partition_data = train_partition_data
