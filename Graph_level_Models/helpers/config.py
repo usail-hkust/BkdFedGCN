@@ -20,7 +20,7 @@ def args_parser():
     parser.add_argument('--config', help="Please give a config.json file with model and training details")
     parser.add_argument('--target_label', type=int, default=0, help='target label of the poisoned dataset')
     parser.add_argument('--poisoning_intensity', type=float, default=0.1, help='frac of training dataset to be injected trigger')
-    parser.add_argument('--frac_of_avg', type=float, default=0.1, help='frac of avg nodes to be injected the trigger')
+    parser.add_argument('--frac_of_avg', type=float, default=0.3, help='frac of avg nodes to be injected the trigger')
     parser.add_argument('--density', type=float, default=0.8, help='density of the edge in the generated trigger')
     parser.add_argument('--num_mali', type=int, default=1, help="number of malicious clients")
     parser.add_argument('--avg_degree', type=int, default=3,
@@ -35,7 +35,7 @@ def args_parser():
                         help=' a training instance with label i to the ith group with probability p, A higher p indicates a higher degree of non-IID ')
     parser.add_argument('--device_id', type=int, default= 0,
                         help='device id')
-    parser.add_argument('--filename', type = str, default = "", help='path of output file(save results)')
+    parser.add_argument('--filename', type = str, default = "./checkpoints/Graph", help='path of output file(save results)')
     parser.add_argument('--epoch_backdoor', type=int, default=0, help='from which epoch the malicious clients start backdoor attack')
     parser.add_argument('--seed', type=int, default=0, help='0-9')
     parser.add_argument('--proj_name', type=str, default="BkdFedGCN", help='wandb logger project name')
