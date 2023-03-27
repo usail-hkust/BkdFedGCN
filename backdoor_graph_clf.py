@@ -141,24 +141,7 @@ def main(args, logger):
         test_clean_loader_list.append(test_clean_loader)
         test_unchanged_loader_list.append(test_unchanged_loader)
 
-    # save global trigger in order to implement centrilized backoor attack
-    if args.num_mali > 0:
-        filename = "./Data/global_trigger/%d/%s_%s_%d_%d_%d_%.2f_%.2f_%.2f_%s" \
-                   % (args.seed, MODEL_NAME, config['dataset'], args.num_workers, args.num_mali, args.epoch_backdoor,
-                      args.frac_of_avg, args.poisoning_intensity, args.density, args.trigger_type) + '.pkl'
-        path = os.path.split(filename)[0]
-        isExist = os.path.exists(path)
-        if not isExist:
-            os.makedirs(path)
-        # save the global trigger that is then used in the centralized backdoor attack
-        save_object(triggers, filename)
-        print('The global trigger is saved successfully!')
-        test_global_trigger = inject_global_trigger_test(partition[-1], avg_nodes, args, triggers)
-        test_global_trigger_load = DataLoader(test_global_trigger, batch_size=args.batch_size, shuffle=True,
-                                              drop_last=drop_last,
-                                              collate_fn=dataset.collate)
-    acc_record = [0]
-    counts = 0
+
     weight_history = []
     for epoch in range(args.epochs):
         print('epoch:', epoch)
@@ -176,17 +159,15 @@ def main(args, logger):
 
         train_l_sum, train_acc_sum, n, batch_count, start = 0.0, 0.0, 0, 0, time.time()
         different_clients_test_accuracy_local_trigger = []
-        different_clients_test_accuracy_global_trigger = []
+
         for i in range(args.num_workers):
             att_list = []
             train_loss, train_acc, test_loss, test_acc = client[i].gnn_train()
             different_clients_test_accuracy_local_trigger.append(test_acc)
             client[i].scheduler.step()
-            global_att = gnn_evaluate_accuracy(test_global_trigger_load, client[i].model)
-            different_clients_test_accuracy_global_trigger.append(global_att)
             print('Client %d, loss %.4f, train acc %.3f, test loss %.4f, test acc %.3f'
                   % (i, train_loss, train_acc, test_loss, test_acc))
-            print('Client %d with global trigger: %.3f' % (i, global_att))
+
 
             # save worker results
             for ele in worker_results[f"client_{i}"]:
@@ -214,7 +195,7 @@ def main(args, logger):
                     os.makedirs(path)
 
                 with open(save_path, 'a') as f:
-                    f.write('%.3f %.3f %.3f %.3f %.3f ' % (train_loss, train_acc, test_loss, test_acc, global_att))
+                    f.write('%.3f %.3f %.3f %.3f' % (train_loss, train_acc, test_loss, test_acc))
                     for i in range(len(triggers)):
                         f.write('%.3f' % att_list[i])
                         f.write(' ')
@@ -273,8 +254,6 @@ def main(args, logger):
         # inject triggers into the testing data
         if args.num_mali > 0 and epoch >= args.epoch_backdoor:
             local_att_acc = []
-            global_att_acc = gnn_evaluate_accuracy(test_global_trigger_load, client[0].model)
-            print('Global model with global trigger: %.3f' % global_att_acc)
             for i in range(args.num_mali):
                 tmp_acc = gnn_evaluate_accuracy(attack_loader_list[i], client[0].model)
                 print('Global model with local trigger %d: %.3f' % (i, tmp_acc))
@@ -290,8 +269,6 @@ def main(args, logger):
                 if not isExist:
                     os.makedirs(path)
                 with open(save_path, 'a') as f:
-                    f.write("%.3f" % (global_att_acc))
-                    f.write(' ')
                     for i in range(args.num_mali):
                         f.write("%.3f" % (local_att_acc[i]))
                         f.write(' ')
