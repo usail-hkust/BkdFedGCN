@@ -37,7 +37,7 @@ We consider the most widely studied setting:
 ## Dataset
 We consider the most widely studied datasets:
 - **Node level:**
-- **Graph level:** `NCI1`, `PROTEINS_full`, `TRIANGLES`,`DD`, `ENZYMES`,`COLLAB`, `IMDB-BINARY`,`IMDB-MULTI`,`REDDIT-BINARY`, `REDDIT-5K`
+- **Graph level:** `NCI1`, `PROTEINS_full`, `TRIANGLES`,`DD`, `ENZYMES`,`COLLAB`, `IMDB-BINARY`,`IMDB-MULTI`,`REDDIT-BINARY`, `REDDIT-MULTI-5K`
 
 
 ## GCN Model
@@ -74,7 +74,7 @@ python TO DO
 |        | Poisoning Rate       | Percentage of training data that has been  poisoned                                   | `--poisoning_intensity` | `0.1`         | `0.1`, `0.2`, `0.3`, `0.4`,`0.5` |
 
 - **Model**: `GCN`, `GAT`, `GraphSAGE`
-- **Dataset**: `NCI1`, `PROTEINS_full`, `TRIANGLES`,`DD`, `ENZYMES`,`COLLAB`, `IMDB-BINARY`,`IMDB-MULTI`,`REDDIT-BINARY`, `REDDIT-5K`
+- **Dataset**: `NCI1`, `PROTEINS_full`, `TRIANGLES`,`DD`, `ENZYMES`,`COLLAB`, `IMDB-BINARY`,`IMDB-MULTI`,`REDDIT-BINARY`, `REDDIT-MULTI-5K`
 - **Optimizer**: Adam with default hyperparameters
 - **Total epoch**: `1000`
 - **Batch size**: `128`

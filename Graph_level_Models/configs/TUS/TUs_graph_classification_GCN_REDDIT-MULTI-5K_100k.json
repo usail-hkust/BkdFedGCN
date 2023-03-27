@@ -5,7 +5,7 @@
     },
     
     "model": "GCN",
-    "dataset": "REDDIT-5K",
+    "dataset": "REDDIT-MULTI-5K",
         
     "net_params": {
         "L": 4,
