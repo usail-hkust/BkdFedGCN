@@ -29,10 +29,19 @@ Note that  the authors demonstrate how the node level backdoor attack can be ada
 
 ## Threat Model
 We consider the most widely studied setting:
-- **L-inf norm constraint with the maximal epsilon be 8/255 on CIFAR-10**.
-- **No accessibility to additional data, neither labeled nor unlabeled**.
-- **Utilize the PGD-AT framework in [Madry et al. 2018](https://arxiv.org/abs/1706.06083)**.
-- **TO DO**.
+### Adversary goal:
+- **To introduce backdoors into the  model so that it misclassifies specific pre-determined labels (i.e., target label) in backdoored data samples without affecting the accuracy on clean data**.
+### Adversary capability：
+- **The adversary can corrupt 𝑀 clients by injecting poisoned local datasets in every round**.
+- **The adversary cannot impact the aggregation process on the central server or the training or model updates of other clients**.
+- **The adversary has knowledge of the target label that they want the backdoor to trigger**.
+###  Assumptions:
+- **The global model is trained using a federated learning approach, where multiple clients train the model collaboratively**.
+- **The adversary has access to a subset of clients and can inject poisoned local datasets on these clients**.
+
+
+
+
 
 ## Dataset
 We consider the most widely studied datasets:
