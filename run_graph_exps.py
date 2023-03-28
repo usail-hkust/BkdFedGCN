@@ -10,6 +10,7 @@ rs = np.random.RandomState(args.seed)
 seeds = rs.randint(1000, size=5)
 
 project_name = [args.proj_name, args.proj_name+ "debug"]
+proj_name = project_name[1]
 def main(args):
     with open(args.config) as f:
         config = json.load(f)
@@ -38,7 +39,7 @@ def main(args):
         # wandb init
         logger = wandb.init(
             #entity="hkust-gz",
-            project=project_name[0],
+            project=proj_name,
             group=file_name,
             name=f"round_{i}",
             config=args,
@@ -65,7 +66,7 @@ def main(args):
     logger_table = wandb.Table(columns=columns, data=results_table)
     table_logger = wandb.init(
         #entity="hkust-gz",
-        project=project_name[0],
+        project=proj_name,
         group=file_name,
         name=f"exp_results",
         config=args,

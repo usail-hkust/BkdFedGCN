@@ -87,8 +87,28 @@ def transform_dataset(trainset, testset, avg_nodes, args):
         for data in train_trigger_graphs:
             trigger_num = random.sample(data[0].nodes().tolist(), num_trigger_nodes)
             trigger_list.append(trigger_num)
-            #print(trigger_list)
-            #ttt
+
+    elif args.trigger_position == "degree":
+        for data in train_trigger_graphs:
+            #  transfer data to Network graph
+            g = dgl.to_networkx(data[0].cpu())
+
+            # sort according to degree
+            degree_dict = dict(g.degree())
+            sorted_nodes = sorted(degree_dict, key=degree_dict.get, reverse=True)
+
+            trigger_num = sorted_nodes[:num_trigger_nodes]
+            trigger_list.append(trigger_num)
+    elif args.trigger_position == "cluster":
+        for data in train_trigger_graphs:
+            #  transfer data to Network graph
+            g = dgl.to_networkx(data[0].cpu())
+            #  sort according to cluster
+            clustering_dict = nx.clustering(g)
+            sorted_nodes = sorted(clustering_dict, key=clustering_dict.get, reverse=True)
+
+            trigger_num = sorted_nodes[:num_trigger_nodes]
+            trigger_list.append(trigger_num)
     else:
         raise NameError
 
