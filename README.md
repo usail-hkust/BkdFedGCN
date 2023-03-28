@@ -71,7 +71,7 @@ python TO DO
 | Client | Trigger Size         | The size of a trigger (the number of trigger's nodes)                                 | `--frac_of_avg`         | `0.3`         | `0.1`,`0.2`,`0.3`,`0.4`,`0.5`    |
 |        | Trigger Type         | The specific type of trigger type                                                     | `--trigger_type`        | `renyi`       | `reny`,`ws`, `ba`, `rr`          |
 |        | Trigger Position     | Locations in a graph (subgraph) where a trigger  is inserted                          | `--trigger_position`    | `random`      | `random`                         |
-|        | Poisoning Rate       | Percentage of training data that has been  poisoned                                   | `--poisoning_intensity` | `0.1`         | `0.1`, `0.2`, `0.3`, `0.4`,`0.5`,`0.6`, `0.7`, `0.8`, `0.9`,`1.0` |
+|        | Poisoning Rate       | Percentage of training data that has been  poisoned                                   | `--poisoning_intensity` | `0.3`         | `0.1`, `0.2`, `0.3`, `0.4`,`0.5`,`0.6`, `0.7`, `0.8`, `0.9`,`1.0` |
 
 - **Model**: `GCN`, `GAT`, `GraphSAGE`
 - **Dataset**: Molecules: `AIDS`,`NCI1` Bioinformatics: `PROTEINS_full`,`DD`, `ENZYMES` Social:`COLLAB`, `IMDB-BINARY`,`IMDB-MULTI`,`REDDIT-BINARY`, `REDDIT-MULTI-5K` Synthetic: `TRIANGLES`, `COLORS-3`
