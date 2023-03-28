@@ -49,15 +49,9 @@ We consider the most widely studied GCN models:
 
 
 ## Backdoor attack on  Graph Classification in Federated Graph Learning 
-###  Train a clean Federated GNN model
-```
-python TO DO
-```
 
-###  Backdoor attack  in Federated GNNs
-```
-python TO DO
-```
+
+
 
 ###  Uncovering the Use of Multiple Components in Backdoor Attacks on Federated Graph Neural Networks: Insights from Graph Classification Experiments
 
@@ -73,6 +67,8 @@ python TO DO
 |        | Trigger Position     | Locations in a graph (subgraph) where a trigger  is inserted                          | `--trigger_position`    | `random`      | `random`                         |
 |        | Poisoning Rate       | Percentage of training data that has been  poisoned                                   | `--poisoning_intensity` | `0.1`         | `0.1`, `0.2`, `0.3`, `0.4`,`0.5`,`0.6`, `0.7`, `0.8`, `0.9`,`1.0` |
 
+Other paramaters
+
 - **Model**: `GCN`, `GAT`, `GraphSAGE`
 - **Dataset**: Molecules: `AIDS`,`NCI1` Bioinformatics: `PROTEINS_full`,`DD`, `ENZYMES` Social:`COLLAB`, `IMDB-BINARY`,`IMDB-MULTI`,`REDDIT-BINARY`, `REDDIT-MULTI-5K` Synthetic: `TRIANGLES`, `COLORS-3`
 - **Optimizer**: Adam with default hyperparameters
@@ -80,7 +76,13 @@ python TO DO
 - **Batch size**: `128`
 - **Learning rate**: `7e-4`
 
+####  Train a clean Federated GNN model
+```
+python TO DO
+```
 
+
+####  Backdoor attack  in Federated GNNs
 running command for training:
 ```python
 python run_graph_exps.py --dataset NCI1 \
