@@ -4,12 +4,16 @@ from helpers.metrics_utils import log_test_results
 import numpy as np
 import json
 import wandb
+#from Chatgpt_Analyze_Exp import chat_analyze_exps
+
 
 args = args_parser()
 rs = np.random.RandomState(args.seed)
 seeds = rs.randint(1000, size=5)
 
 project_name = [args.proj_name, args.proj_name+ "debug"]
+#change the work enviroment debug or norm
+proj_name = project_name[1]
 def main(args):
     with open(args.config) as f:
         config = json.load(f)
@@ -38,14 +42,14 @@ def main(args):
         # wandb init
         logger = wandb.init(
             #entity="hkust-gz",
-            project=project_name[0],
+            project=proj_name,
             group=file_name,
             name=f"round_{i}",
             config=args,
         )
 
         average_all_clean_acc, average_local_attack_success_rate_acc, average_local_clean_acc, average_local_unchanged_acc,average_transfer_attack_success_rate = backdoor_main(args, logger)
-        results_table.append([average_all_clean_acc, average_local_attack_success_rate_acc, average_local_clean_acc, average_local_unchanged_acc,average_transfer_attack_success_rate])
+        results_table.append([average_all_clean_acc, average_local_attack_success_rate_acc, average_local_clean_acc, average_local_unchanged_acc,average_transfer_attack_success_rate,""])
         logger.log({"average_all_clean_acc": average_all_clean_acc,
                     "average_local_attack_success_rate_acc": average_local_attack_success_rate_acc,
                     "average_local_clean_acc": average_local_clean_acc,
@@ -61,17 +65,56 @@ def main(args):
         wandb.finish()
 
     # wandb table logger init
-    columns = ["average_all_clean_acc", "average_local_attack_success_rate_acc", "average_local_clean_acc", "average_local_unchanged_acc","average_transfer_attack_success_rate"]
+    columns = ["average_all_clean_acc", "average_local_attack_success_rate_acc", "average_local_clean_acc", "average_local_unchanged_acc","average_transfer_attack_success_rate","Summary"]
+    average_all_clean_acc, average_local_attack_success_rate_acc, average_local_clean_acc, average_local_unchanged_acc, average_transfer_attack_success_rate = backdoor_main(
+        args, logger)
+    results_table.append([average_all_clean_acc, average_local_attack_success_rate_acc, average_local_clean_acc,
+                          average_local_unchanged_acc, average_transfer_attack_success_rate, ""])
+    logger.log({"average_all_clean_acc": average_all_clean_acc,
+                "average_local_attack_success_rate_acc": average_local_attack_success_rate_acc,
+                "average_local_clean_acc": average_local_clean_acc,
+                "average_local_unchanged_acc": average_local_unchanged_acc,
+                "average_transfer_attack_success_rate": average_transfer_attack_success_rate})
+
+    average_all_clean_acc_list.append(average_all_clean_acc)
+    average_local_attack_success_rate_acc_list.append(average_local_attack_success_rate_acc)
+    average_local_clean_acc_list.append(average_local_clean_acc)
+    average_local_unchanged_acc_list.append(average_local_unchanged_acc)
+    average_transfer_attack_success_rate_list.append(average_transfer_attack_success_rate)
+    # end the logger
+    wandb.finish()
+    #report = chat_analyze_exps(results_table, columns, args)
+    results_table[0][-1] = "==Your Summary=="
     logger_table = wandb.Table(columns=columns, data=results_table)
     table_logger = wandb.init(
         #entity="hkust-gz",
-        project=project_name[0],
+        project=proj_name,
         group=file_name,
         name=f"exp_results",
         config=args,
     )
     table_logger.log({"results": logger_table})
     wandb.finish()
+    ###############################################
+    # # record the chat gpt
+    # # 初始化 Wandb
+    # analysis_logger = wandb.init(
+    #     #entity="hkust-gz",
+    #     project=proj_name,
+    #     group=file_name,
+    #     name=f"analysis_results",
+    #     config=args,
+    # )
+    # # 记录文本
+    # report = chat_analyze_exps(results_table, columns, args)
+    # wandb.log(report)
+    #
+    # # 结束 Wandb
+    # wandb.finish()
+    ####################################
+
+
+
 
     mean_average_all_clean_acc, mean_average_local_attack_success_rate_acc, mean_average_local_clean_acc = np.mean(np.array(average_all_clean_acc_list)),\
                                                                                                            np.mean(np.array(average_local_attack_success_rate_acc_list)),\

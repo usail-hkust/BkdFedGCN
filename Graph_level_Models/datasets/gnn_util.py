@@ -87,7 +87,8 @@ def transform_dataset(trainset, testset, avg_nodes, args):
         for data in train_trigger_graphs:
             trigger_num = random.sample(data[0].nodes().tolist(), num_trigger_nodes)
             trigger_list.append(trigger_num)
-
+            #print(trigger_list)
+            #ttt
     else:
         raise NameError
 
@@ -426,7 +427,12 @@ def num_noniid_split(dataset, args,min_num,max_num):
         rand_set = set(np.random.choice(idx, rand_num, replace=False))
         idx = list(set(idx) - rand_set)
         dict_users[i] = rand_set
-        partition.append(dataset[rand_set])
+        #my_dict = {val: idx for idx, val in enumerate(rand_set)}
+        #indices = [my_dict[val] for val in rand_set]
+        # print("rand_set",rand_set)
+        # print("indices", list(rand_set))
+        # print("dataset", dataset[0])
+        partition.append([dataset[i] for i in rand_set])
     return partition
 
 
