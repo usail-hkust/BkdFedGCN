@@ -104,9 +104,7 @@ def main(args, logger):
         add_o = id(client[i].optimizer)
         print('model {} address: {}'.format(i, add_m))
         print('optimizer {} address: {}'.format(i, add_o))
-    # prepare backdoor local backdoor dataset
-    train_loader_list = []
-    attack_loader_list = []
+
 
 
 
@@ -118,15 +116,6 @@ def main(args, logger):
         worker_results = {}
         for i in range(args.num_workers):
             worker_results[f"client_{i}"] = {"train_loss": None, "train_acc": None, "test_loss": None, "test_acc": None}
-
-        if epoch >= args.epoch_backdoor:
-            # malicious clients start backdoor attack
-            for i in range(0, args.num_mali):
-                client[i].train_iter = train_loader_list[i]
-                client[i].attack_iter = attack_loader_list[i]
-
-
-        different_clients_test_accuracy_local_trigger = []
 
         for i in range(args.num_workers):
             att_list = []
