@@ -104,7 +104,13 @@ def transform_dataset(trainset, testset, avg_nodes, args):
             #  transfer data to Network graph
             g = dgl.to_networkx(data[0].cpu())
             #  sort according to cluster
-            clustering_dict = nx.clustering(g)
+            sample_g = nx.DiGraph()
+            for u, v in g.edges():
+                if sample_g.has_edge(u, v):
+                    sample_g[u][v]['weight'] += 1
+                else:
+                    sample_g.add_edge(u, v, weight=1)
+            clustering_dict = nx.clustering(sample_g,weight='weight')
             sorted_nodes = sorted(clustering_dict, key=clustering_dict.get, reverse=True)
 
             trigger_num = sorted_nodes[:num_trigger_nodes]
