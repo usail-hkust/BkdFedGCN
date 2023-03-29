@@ -87,7 +87,11 @@ Other paramaters
 
 ####  Train a clean Federated GNN model
 ```
-python TO DO
+python run_clean_graph_exps.py --dataset NCI1 \
+                         --config ./Graph_level_Models/configs/TUS/TUs_graph_classification_GCN_NCI1_100k.json \
+                         --is_iid iid\
+                         --num_workers 5\
+
 ```
 
 
