@@ -63,6 +63,7 @@ class WorkerBase(metaclass=ABCMeta):
         self.model.train()
         self.acc_record = [0]
         train_l_sum, train_acc_sum, n, batch_count, start = 0.0, 0.0, 0, 0, time.time()
+        self.optimizer.zero_grad()
         for batch_graphs, batch_labels in self.train_iter:
             batch_graphs = batch_graphs.to(self.device)
             #print("batch_graphs.shape",batch_graphs)
@@ -73,7 +74,7 @@ class WorkerBase(metaclass=ABCMeta):
 
             batch_labels = batch_labels.to(torch.long)
             batch_labels = batch_labels.to(self.device)
-            self.optimizer.zero_grad()
+            #self.optimizer.zero_grad()
             batch_scores = self.model.forward(batch_graphs, batch_x, batch_e)
             l = self.model.loss(batch_scores, batch_labels)
             l.backward()

@@ -120,7 +120,7 @@ def main(args, logger):
         for i in range(args.num_workers):
             att_list = []
             train_loss, train_acc, test_loss, test_acc = client[i].gnn_train()
-            different_clients_test_accuracy_local_trigger.append(test_acc)
+
             client[i].scheduler.step()
             print('Client %d, loss %.4f, train acc %.3f, test loss %.4f, test acc %.3f'
                   % (i, train_loss, train_acc, test_loss, test_acc))

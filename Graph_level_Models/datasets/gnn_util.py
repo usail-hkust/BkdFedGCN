@@ -53,11 +53,16 @@ def transform_dataset(trainset, testset, avg_nodes, args):
         train_trigger_graphs = tmp_graphs
         final_idx = tmp_idx
     #Generate the graph triggers
+
+    if num_trigger_nodes < 2:
+        num_trigger_nodes = 2
     if args.trigger_type == "renyi":
         G_trigger = nx.erdos_renyi_graph(num_trigger_nodes, args.density, directed=False)
     elif args.trigger_type == "ws":
         G_trigger = nx.watts_strogatz_graph(num_trigger_nodes, args.avg_degree, args.density)
     elif args.trigger_type == "ba":
+
+
         if args.avg_degree >= num_trigger_nodes:
             args.avg_degree = num_trigger_nodes - 1
         # n: int Number of nodes
