@@ -91,7 +91,7 @@ def main(args, logger):
                                   drop_last=drop_last,
                                   collate_fn=dataset.collate)
         attack_loader = None
-        test_loader = DataLoader(test_dataset, batch_size=args.batch_size, shuffle=True,
+        test_loader = DataLoader(test_dataset, batch_size=args.batch_size, shuffle=False,
                                  drop_last=drop_last,
                                  collate_fn=dataset.collate)
         all_workers_clean_test_list.append(test_loader)
