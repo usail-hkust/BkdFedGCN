@@ -73,9 +73,9 @@ class WorkerBase(metaclass=ABCMeta):
 
             batch_labels = batch_labels.to(torch.long)
             batch_labels = batch_labels.to(self.device)
+            self.optimizer.zero_grad()
             batch_scores = self.model.forward(batch_graphs, batch_x, batch_e)
             l = self.model.loss(batch_scores, batch_labels)
-            self.optimizer.zero_grad()
             l.backward()
             self.optimizer.step()
             train_l_sum += l.cpu().item()
@@ -101,34 +101,40 @@ class WorkerBase(metaclass=ABCMeta):
     def gnn_evaluate(self):
         acc_sum, acc_att, n, test_l_sum = 0.0, 0.0, 0, 0.0
         batch_count = 0
-        for batch_graphs, batch_labels in self.test_iter:
-            batch_graphs = batch_graphs.to(self.device)
-            self.model.eval()
-            batch_x = batch_graphs.ndata['feat'].to(self.device)
-            batch_e = batch_graphs.edata['feat'].to(self.device)
-            batch_labels = batch_labels.to(torch.long)
-            batch_labels = batch_labels.to(self.device)
-    
-            batch_scores = self.model.forward(batch_graphs, batch_x, batch_e)
-            l = self.loss_func(batch_scores, batch_labels)
-            acc_sum += accuracy(batch_scores, batch_labels)
-            test_l_sum += l.detach().item()
-            n += batch_labels.size(0)
-            batch_count += 1
-            if self.attack_iter is not None:
-                n_att = 0
-                for batch_graphs, batch_labels in self.attack_iter:
-                    batch_graphs = batch_graphs.to(self.device)
-                    self.model.eval()
-                    batch_x = batch_graphs.ndata['feat'].to(self.device)
-                    batch_e = batch_graphs.edata['feat'].to(self.device)
-                    batch_labels = batch_labels.to(self.device)
+        self.model.eval()
+        with torch.no_grad():
+            for batch_graphs, batch_labels in self.test_iter:
+                batch_graphs = batch_graphs.to(self.device)
 
-                    batch_scores = self.model.forward(batch_graphs, batch_x, batch_e)
-                    acc_att += accuracy(batch_scores, batch_labels)
-                    self.model.train()
-                    n_att += batch_labels.size(0)
-                return acc_sum / n, test_l_sum / batch_count, acc_att / n_att
+                batch_x = batch_graphs.ndata['feat'].to(self.device)
+                batch_e = batch_graphs.edata['feat'].to(self.device)
+
+                batch_labels = batch_labels.to(torch.long)
+                batch_labels = batch_labels.to(self.device)
+
+                batch_scores = self.model.forward(batch_graphs, batch_x, batch_e)
+                l = self.loss_func(batch_scores, batch_labels)
+                acc_sum += accuracy(batch_scores, batch_labels)
+                test_l_sum += l.detach().item()
+                n += batch_labels.size(0)
+                batch_count += 1
+                if self.attack_iter is not None:
+                    n_att = 0
+                    self.model.eval()
+                    for batch_graphs, batch_labels in self.attack_iter:
+                        batch_graphs = batch_graphs.to(self.device)
+
+                        batch_x = batch_graphs.ndata['feat'].to(self.device)
+                        batch_e = batch_graphs.edata['feat'].to(self.device)
+                        batch_labels = batch_labels.to(self.device)
+
+
+
+                        batch_scores = self.model.forward(batch_graphs, batch_x, batch_e)
+                        acc_att += accuracy(batch_scores, batch_labels)
+                        #self.model.train()
+                        n_att += batch_labels.size(0)
+                    return acc_sum / n, test_l_sum / batch_count, acc_att / n_att
 
         return acc_sum / n, test_l_sum / batch_count
  
