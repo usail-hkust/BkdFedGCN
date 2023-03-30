@@ -58,6 +58,7 @@ class GATNet(nn.Module):
     def loss(self, pred, label):
         criterion = nn.CrossEntropyLoss()
         loss = criterion(pred, label)
+        #loss = F.nll_loss(pred, label)
         return loss
     
 

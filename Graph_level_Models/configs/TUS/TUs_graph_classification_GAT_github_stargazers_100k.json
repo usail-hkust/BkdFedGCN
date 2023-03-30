@@ -5,7 +5,7 @@
     },
     
     "model": "GAT",
-    "dataset": "COLLAB",
+    "dataset": "github_stargazers",
 
     "net_params": {
         "L": 4,
@@ -16,7 +16,7 @@
         "n_heads": 8,
         "in_feat_dropout": 0.0,
         "dropout": 0.0,
-        "batch_norm": true,
+        "batch_norm": false,
         "self_loop": true
     }
 }

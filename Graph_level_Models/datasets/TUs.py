@@ -127,7 +127,7 @@ def self_loop(g):
         This function is called inside a function in TUsDataset class.
     """
     new_g = dgl.DGLGraph()
-    new_g.add_nodes(g.number_of_nodes())
+
     new_g.ndata['feat'] = g.ndata['feat']
     
     src, dst = g.all_edges(order="eid")
@@ -202,10 +202,15 @@ class TUsDataset(torch.utils.data.Dataset):
     def collate(self, samples):
         # The input samples is a list of pairs (graph, label).
         graphs, labels = map(list, zip(*samples))
+
         a = np.array(labels, dtype=np.float16)
         labels = torch.from_numpy(a)
+
+
         batched_graph = dgl.batch(graphs)
-        
+
+       #labels = torch.tensor(labels).float()
+
         return batched_graph, labels
     
     

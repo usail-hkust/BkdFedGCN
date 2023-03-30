@@ -6,7 +6,7 @@ def args_parser():
     parser.add_argument('--num_workers', type=int, default=5, help="number of clients in total")
     parser.add_argument('--batch_size', type=int, default=128, help="local batch size") # 128
     parser.add_argument('--epochs', type=int, default=1000, help="training epochs")
-    parser.add_argument('--lr', type=float, default=5e-5, help="learning rate") # 1e-6   default 7e-4
+    parser.add_argument('--lr', type=float, default=7e-4, help="learning rate") # 1e-6   default 7e-4
     parser.add_argument('--weight_decay', type=float, default=0.0, help="weight decay")
     parser.add_argument('--step_size', type=int, default=100, help="step size")
     parser.add_argument('--gamma', type=float, default=0.7, help="gamma")

@@ -5,7 +5,7 @@
     },
     
     "model": "GAT",
-    "dataset": "COLLAB",
+    "dataset": "facebook_ct1",
 
     "net_params": {
         "L": 4,
@@ -17,6 +17,6 @@
         "in_feat_dropout": 0.0,
         "dropout": 0.0,
         "batch_norm": true,
-        "self_loop": true
+        "self_loop": false
     }
 }

@@ -5,7 +5,7 @@
     },
     
     "model": "GAT",
-    "dataset": "COLLAB",
+    "dataset": "reddit_threads",
 
     "net_params": {
         "L": 4,

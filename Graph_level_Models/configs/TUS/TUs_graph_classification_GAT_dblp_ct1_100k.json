@@ -5,7 +5,7 @@
     },
     
     "model": "GAT",
-    "dataset": "COLLAB",
+    "dataset": "dblp_ct1",
 
     "net_params": {
         "L": 4,

@@ -5,7 +5,7 @@
     },
     
     "model": "GAT",
-    "dataset": "COLLAB",
+    "dataset": "Letter-highD",
 
     "net_params": {
         "L": 4,
