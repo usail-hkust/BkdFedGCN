@@ -534,7 +534,7 @@ def split_dataset(args, dataset):
     args.avg_degree = int(sum_avg_degree / len(graph_sizes))
     if args.is_iid == "iid":
         # iid splitq
-        partition_data = random_split(dataset_all, length) # split training data and test data
+        partition_data = random_split(dataset_all, length,generator=torch.Generator().manual_seed(args.seed)) # split training data and test data
     elif args.is_iid == "p-degree-non-iid":
         # p-degree-non-iid: Local Model Poisoning Attacks to Byzantine-Robust Federated Learning
         # non-iid split
