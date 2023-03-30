@@ -479,6 +479,11 @@ def split_dataset(args, dataset):
     participation data for each clients:
     [train_client_0,train_client_1,...,test_client_0,test_client_1,...]
     """
+    # seed
+    np.random.seed(args.seed)
+    torch.manual_seed(args.seed)
+    torch.cuda.manual_seed(args.seed)
+    #########################################
     num_classes = torch.max(dataset.all.graph_labels).item() + 1
     dataset_all = dataset.train[0] + dataset.val[0] + dataset.test[0]
 
