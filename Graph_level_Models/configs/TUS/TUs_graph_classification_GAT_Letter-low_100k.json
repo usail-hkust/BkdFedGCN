@@ -5,11 +5,11 @@
     },
     
     "model": "GAT",
-    "dataset": "REDDIT-BINARY",
+    "dataset": "Letter-low",
 
     "net_params": {
-        "L": 2,
-        "hidden_dim": 64,
+        "L": 4,
+        "hidden_dim": 18,
         "out_dim": 144,
         "residual": true,
         "readout": "mean",

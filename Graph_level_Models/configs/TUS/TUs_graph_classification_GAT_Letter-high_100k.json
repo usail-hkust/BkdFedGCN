@@ -5,7 +5,7 @@
     },
     
     "model": "GAT",
-    "dataset": "Letter-highD",
+    "dataset": "Letter-high",
 
     "net_params": {
         "L": 4,

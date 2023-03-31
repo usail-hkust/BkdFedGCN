@@ -5,7 +5,7 @@
       <paths name="laisiqi@1.13.172.12:22">
         <serverdata>
           <mappings>
-            <mapping local="$PROJECT_DIR$" web="/" />
+            <mapping deploy="/home/laisiqi/fanBack" local="$PROJECT_DIR$" web="/" />
           </mappings>
         </serverdata>
       </paths>
@@ -16,10 +16,17 @@
           </mappings>
         </serverdata>
       </paths>
-      <paths name="laisiqi@119.45.4.243:22 password">
+      <paths name="laisiqi@10.120.16.36:22">
         <serverdata>
           <mappings>
             <mapping local="$PROJECT_DIR$" web="/" />
+          </mappings>
+        </serverdata>
+      </paths>
+      <paths name="laisiqi@119.45.4.243:22 password">
+        <serverdata>
+          <mappings>
+            <mapping deploy="/data/laisiqi/diffusion" local="$PROJECT_DIR$" web="/" />
           </mappings>
         </serverdata>
       </paths>
