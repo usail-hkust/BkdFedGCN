@@ -1,22 +1,22 @@
 {
     "gpu": {
         "use": true,
-        "id": 0
+        "id": 1
     },
     
-    "model": "GAT",
-    "dataset": "REDDIT-BINARY",
-
+    "model": "GraphSage",
+    "dataset": "Fingerprint",
+    
     "net_params": {
-        "L": 2,
-        "hidden_dim": 64,
-        "out_dim": 144,
+        "L": 4,
+        "hidden_dim": 90,
+        "out_dim": 90,
         "residual": true,
         "readout": "mean",
-        "n_heads": 8,
         "in_feat_dropout": 0.0,
         "dropout": 0.0,
         "batch_norm": true,
-        "self_loop": true
+        "sage_aggregator": "pool",
+        "dgl_builtin": true
     }
 }

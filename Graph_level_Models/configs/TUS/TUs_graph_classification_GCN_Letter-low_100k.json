@@ -4,19 +4,18 @@
         "id": 0
     },
     
-    "model": "GAT",
-    "dataset": "REDDIT-BINARY",
-
+    "model": "GCN",
+    "dataset": "Letter-low",
+        
     "net_params": {
-        "L": 2,
-        "hidden_dim": 64,
-        "out_dim": 144,
+        "L": 4,
+        "hidden_dim": 146,
+        "out_dim": 146,
         "residual": true,
         "readout": "mean",
-        "n_heads": 8,
         "in_feat_dropout": 0.0,
         "dropout": 0.0,
         "batch_norm": true,
-        "self_loop": true
+        "self_loop": false
     }
 }

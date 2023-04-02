@@ -5,14 +5,64 @@
       <paths name="27BkdFedGCN">
         <serverdata>
           <mappings>
+<<<<<<< HEAD
             <mapping deploy="/home/liufan/projects/BkdFedGCN" local="$PROJECT_DIR$" web="/" />
+=======
+            <mapping deploy="/home/laisiqi/fanBack" local="$PROJECT_DIR$" web="/" />
+>>>>>>> 87d851bd87c5a897d121ed9a5bd18299e708a0d6
           </mappings>
         </serverdata>
       </paths>
       <paths name="29BkdFedGCN">
         <serverdata>
           <mappings>
+<<<<<<< HEAD
             <mapping deploy="/home/liufan/projects/BkdFedGCN" local="$PROJECT_DIR$" />
+=======
+            <mapping deploy="/home/laisiqi/projects/fanFed" local="$PROJECT_DIR$" web="/" />
+          </mappings>
+        </serverdata>
+      </paths>
+      <paths name="laisiqi@10.120.16.36:22">
+        <serverdata>
+          <mappings>
+            <mapping local="$PROJECT_DIR$" web="/" />
+          </mappings>
+        </serverdata>
+      </paths>
+      <paths name="laisiqi@119.45.4.243:22 password">
+        <serverdata>
+          <mappings>
+            <mapping deploy="/data/laisiqi/diffusion" local="$PROJECT_DIR$" web="/" />
+          </mappings>
+        </serverdata>
+      </paths>
+      <paths name="lsq@10.147.17.147:22 password">
+        <serverdata>
+          <mappings>
+            <mapping local="$PROJECT_DIR$" web="/" />
+          </mappings>
+        </serverdata>
+      </paths>
+      <paths name="lsq@10.147.17.147:22 password (1)">
+        <serverdata>
+          <mappings>
+            <mapping local="$PROJECT_DIR$" web="/" />
+          </mappings>
+        </serverdata>
+      </paths>
+      <paths name="me@127.0.0.1:2222 password">
+        <serverdata>
+          <mappings>
+            <mapping local="$PROJECT_DIR$" web="/" />
+          </mappings>
+        </serverdata>
+      </paths>
+      <paths name="ubuntu@81.70.0.250:22 password">
+        <serverdata>
+          <mappings>
+            <mapping local="$PROJECT_DIR$" web="/" />
+>>>>>>> 87d851bd87c5a897d121ed9a5bd18299e708a0d6
           </mappings>
         </serverdata>
       </paths>

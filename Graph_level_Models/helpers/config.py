@@ -15,7 +15,7 @@ def args_parser():
     parser.add_argument('--defense', type=str, default='None', help='whethere perform a defense, e.g., foolsgold, flame')
 
     # argument for backdoor attack in GNN model
-    parser.add_argument('--dataset', type=str, default="NCI1", help='name of dataset')
+    parser.add_argument('--dataset', type=str, default="IMDB-BINARY", help='name of dataset')
     parser.add_argument('--datadir', type=str, default="./Data", help='path to save the dataset')
     parser.add_argument('--config', help="Please give a config.json file with model and training details")
     parser.add_argument('--target_label', type=int, default=0, help='target label of the poisoned dataset')

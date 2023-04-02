@@ -46,7 +46,7 @@ We consider the most widely studied setting:
 ## Dataset
 We consider the most widely studied datasets:
 - **Node level:**
-- **Graph level:** Molecules: `AIDS`,`NCI1` Bioinformatics: `PROTEINS_full`,`DD`, `ENZYMES` Social:`COLLAB`, `IMDB-BINARY`,`IMDB-MULTI`,`REDDIT-BINARY`, `REDDIT-MULTI-5K` Synthetic: `TRIANGLES`, `COLORS-3`
+- **Graph level:** Molecules: `AIDS`,`NCI1` Bioinformatics: `PROTEINS_full`,`DD`, `ENZYMES` Computer Vision: `Letter-high`, `Letter-med`,`Letter-low` Synthetic: `TRIANGLES`, `COLORS-3`
 
 
 ## GCN Model
@@ -79,7 +79,7 @@ We consider the most widely studied GCN models:
 Other paramaters
 
 - **Model**: `GCN`, `GAT`, `GraphSAGE`
-- **Dataset**: Molecules: `AIDS`,`NCI1` Bioinformatics: `PROTEINS_full`,`DD`, `ENZYMES` Social:`COLLAB`, `IMDB-BINARY`,`IMDB-MULTI`,`REDDIT-BINARY`, `REDDIT-MULTI-5K` Synthetic: `TRIANGLES`, `COLORS-3`
+- **Dataset**: Molecules: `AIDS`,`NCI1` Bioinformatics: `PROTEINS_full`,`DD`, `ENZYMES` Computer Vision: `Letter-high`, `Letter-med`,`Letter-low` Synthetic: `TRIANGLES`, `COLORS-3`
 - **Optimizer**: Adam with default hyperparameters
 - **Total epoch**: `1000`
 - **Batch size**: `128`
