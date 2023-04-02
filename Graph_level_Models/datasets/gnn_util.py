@@ -54,8 +54,8 @@ def transform_dataset(trainset, testset, avg_nodes, args):
         final_idx = tmp_idx
     #Generate the graph triggers
 
-    if num_trigger_nodes < 2:
-        num_trigger_nodes = 2
+    if num_trigger_nodes < 3:
+        num_trigger_nodes = 3
     if args.trigger_type == "renyi":
         G_trigger = nx.erdos_renyi_graph(num_trigger_nodes, args.density, directed=False)
     elif args.trigger_type == "ws":
@@ -82,7 +82,7 @@ def transform_dataset(trainset, testset, avg_nodes, args):
     # random graph generator
     # er = nx.erdos_renyi_graph(100, 0.15)
     # ws = nx.watts_strogatz_graph(30, 3, 0.1) #nx.watts_strogatz_graph(n, k, p) n nodes, k neighbors, and probability p to connect the nodes # n个节点、每个节点有k个邻居、以概率p随机化重连边的WS小世界
-    # ba = nx.barabasi_albert_graph(n, m) #BA无标度网络 # generalize BA network which has n = 20 nodes, m = 1, 每次加入m条边的BA无标度网络
+    # ba = nx.barabasi_albert_graph(n, m)  # generalize BA network which has n = 20 nodes, m = 1
     # red = nx.random_lobster(100, 0.9, 0.9)
     #G_trigger = nx.erdos_renyi_graph(num_trigger_nodes, args.density, directed=False)
 
@@ -110,12 +110,6 @@ def transform_dataset(trainset, testset, avg_nodes, args):
             g = dgl.to_networkx(data[0].cpu())
             #  sort according to cluster
             simple_g = nx.Graph(g)
-            # sample_g = nx.DiGraph()
-            # for u, v in g.edges():
-            #     if sample_g.has_edge(u, v):
-            #         sample_g[u][v]['weight'] += 1
-            #     else:
-            #         sample_g.add_edge(u, v, weight=1)
             clustering_dict = nx.clustering(simple_g,weight='weight')
             sorted_nodes = sorted(clustering_dict, key=clustering_dict.get, reverse=True)
 
@@ -539,7 +533,7 @@ def split_dataset(args, dataset):
     args.avg_degree = int(sum_avg_degree / len(graph_sizes))
     if args.is_iid == "iid":
         # iid splitq
-        partition_data = random_split(dataset_all, length,generator=torch.Generator().manual_seed(int(args.seed))) # split training data and test data
+        partition_data = random_split(dataset_all, length) # split training data and test data
     elif args.is_iid == "p-degree-non-iid":
         # p-degree-non-iid: Local Model Poisoning Attacks to Byzantine-Robust Federated Learning
         # non-iid split

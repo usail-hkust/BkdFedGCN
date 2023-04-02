@@ -8,8 +8,8 @@ import os
 import time
 import Node_level_Models.helpers.selection_utils  as hs
 #Run Federated Experiment
-from model import GCN, SAGE
-from federated_node_classification import run_federated_node_classification
+#from model import GCN, SAGE
+#from federated_node_classification import run_federated_node_classification
 from Node_level_Models.helpers.func_utils import subgraph,get_split
 from torch_geometric.utils import to_undirected
 #Split Graph and creating client datasets

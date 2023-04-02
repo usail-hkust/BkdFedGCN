@@ -59,6 +59,7 @@ def main(args, logger):
             dataset._add_self_loops()
 
     net_params['in_dim'] = dataset.all.graph_lists[0].ndata['feat'][0].shape[0]
+
     num_classes = torch.max(dataset.all.graph_labels).item() + 1
     net_params['n_classes'] = num_classes
     net_params['dropout'] = args.dropout

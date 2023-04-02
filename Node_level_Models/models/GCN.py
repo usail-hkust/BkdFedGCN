@@ -53,6 +53,8 @@ class GCN(nn.Module):
             x = F.dropout(x, self.dropout, training=self.training)
         x = self.gc2(x, edge_index,edge_weight)
         return F.log_softmax(x,dim=1)
+
+
     def get_h(self, x, edge_index):
 
         for conv in self.convs:
