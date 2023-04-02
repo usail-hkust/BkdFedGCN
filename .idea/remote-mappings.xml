@@ -10,6 +10,13 @@
             </list>
           </settings>
         </remote-mappings>
+        <remote-mappings server-id="python@sftp://liufan@10.120.16.29:22/home/liufan/anaconda3/envs/Fed/bin/python">
+          <settings>
+            <list>
+              <mapping local-root="$PROJECT_DIR$" remote-root="/home/liufan/projects/BkdFedGCN" />
+            </list>
+          </settings>
+        </remote-mappings>
       </list>
     </list>
   </component>
