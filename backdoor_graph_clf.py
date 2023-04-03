@@ -123,15 +123,15 @@ def main(args, logger):
                                   collate_fn=dataset.collate)
 
         # only trigger data
-        attack_loader = DataLoader(test_trigger_graphs, batch_size=args.batch_size, shuffle=True,
+        attack_loader = DataLoader(test_trigger_graphs, batch_size=args.batch_size, shuffle=False,
                                    drop_last=drop_last,
                                    collate_fn=dataset.collate)
         # only clean data
-        test_clean_loader = DataLoader(test_clean_data, batch_size=args.batch_size, shuffle=True,
+        test_clean_loader = DataLoader(test_clean_data, batch_size=args.batch_size, shuffle=False,
                                    drop_last=drop_last,
                                    collate_fn=dataset.collate)
         # only unchanged data
-        test_unchanged_loader = DataLoader(test_unchanged_data, batch_size=args.batch_size, shuffle=True,
+        test_unchanged_loader = DataLoader(test_unchanged_data, batch_size=args.batch_size, shuffle=False,
                                    drop_last=drop_last,
                                    collate_fn=dataset.collate)
 

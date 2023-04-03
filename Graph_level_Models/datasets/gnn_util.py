@@ -53,9 +53,9 @@ def transform_dataset(trainset, testset, avg_nodes, args):
         train_trigger_graphs = tmp_graphs
         final_idx = tmp_idx
     #Generate the graph triggers
-
-    if num_trigger_nodes < 3:
-        num_trigger_nodes = 3
+    default_min_num_trigger_nodes = 3
+    if num_trigger_nodes < default_min_num_trigger_nodes:
+        num_trigger_nodes = default_min_num_trigger_nodes
     if args.trigger_type == "renyi":
         G_trigger = nx.erdos_renyi_graph(num_trigger_nodes, args.density, directed=False)
     elif args.trigger_type == "ws":
@@ -557,9 +557,9 @@ def split_dataset(args, dataset):
         total_test_size = test_size * args.num_workers
         length = [total_train_size, total_test_size]
         trainset, testset = random_split(dataset_all, length)
-        train_min_num = int(0.2 * (total_train_size / args.num_workers))
+        train_min_num = int(0.5 * (total_train_size / args.num_workers))
         train_max_num = int(0.8 * (total_train_size / args.num_workers))
-        test_min_num = int(0.2 * (test_size))
+        test_min_num = int(0.5 * (test_size))
         test_max_num = int(0.8 * (test_size))
         train_partition_data = num_noniid_split(trainset, args, min_num= train_min_num, max_num= train_max_num)
         test_partition_data = num_noniid_split(testset, args, min_num= test_min_num, max_num= test_max_num)
