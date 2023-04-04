@@ -18,7 +18,7 @@ def main(args):
         config = json.load(f)
     model_name = config['model']
     # 'data-{}_model-{}_IID-{}_num_workers-{}_num_mali-{}_epoch_backdoor-{}_frac_of_avg-{}_trigger_type-{}_trigger_position-{}_poisoning_intensity-{}'
-    file_name = 'D-{}_M-{}_IID-{}_NW-{}_NM-{}_EB-{}_FA-{}_TPye-{}_TPo-{}_PI-{}'.format(
+    file_name = 'D-{}_M-{}_IID-{}_NW-{}_NM-{}_EB-{}_FA-{}_TPye-{}_TPo-{}_PI-{}_Time-{}'.format(
         args.dataset,
         model_name,
         args.is_iid,
@@ -28,7 +28,8 @@ def main(args):
         args.frac_of_avg,
         args.trigger_type,
         args.trigger_position,
-        args.poisoning_intensity)
+        args.poisoning_intensity,
+        args.epoch_backdoor)
 
     average_all_clean_acc_list, average_local_attack_success_rate_acc_list, average_local_clean_acc_list = [], [], []
     results_table = []
