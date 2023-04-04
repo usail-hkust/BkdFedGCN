@@ -12,6 +12,18 @@ import copy
 import dgl
 from torch.utils.data import random_split
 from torch.utils.data import ConcatDataset
+from torch.utils.data import DataLoader, Dataset
+class TriggerDataset(Dataset):
+    def __init__(self, graphs, labels):
+        self.graphs = graphs
+        self.labels = labels
+
+    def __len__(self):
+        return len(self.graphs)
+
+    def __getitem__(self, idx):
+        return self.graphs[idx], self.labels[idx]
+
 class DGLFormDataset(torch.utils.data.Dataset):
     """
         DGLFormDataset wrapping graph list and label list as per pytorch Dataset.
@@ -36,6 +48,9 @@ def transform_dataset(trainset, testset, avg_nodes, args):
             train_untarget_idx.append(i)
 
     train_untarget_graphs = [copy.deepcopy(graph) for graph in trainset if graph[1].item() != args.target_label]
+    train_labels = [graph[1] for graph in trainset]
+    num_classes = torch.max(torch.tensor(train_labels)).item() + 1
+
     tmp_graphs = []
     tmp_idx = []
     num_trigger_nodes = int(avg_nodes * args.frac_of_avg) # avg_nodes is the average number of all grpah's nodes
@@ -52,39 +67,13 @@ def transform_dataset(trainset, testset, avg_nodes, args):
     else:
         train_trigger_graphs = tmp_graphs
         final_idx = tmp_idx
-    #Generate the graph triggers
+
+    ##############################################################################################
+    print("Start generating trigger position by {}".format(args.trigger_position))
     default_min_num_trigger_nodes = 3
     if num_trigger_nodes < default_min_num_trigger_nodes:
         num_trigger_nodes = default_min_num_trigger_nodes
-    if args.trigger_type == "renyi":
-        G_trigger = nx.erdos_renyi_graph(num_trigger_nodes, args.density, directed=False)
-    elif args.trigger_type == "ws":
-        G_trigger = nx.watts_strogatz_graph(num_trigger_nodes, args.avg_degree, args.density)
-    elif args.trigger_type == "ba":
 
-
-        if args.avg_degree >= num_trigger_nodes:
-            args.avg_degree = num_trigger_nodes - 1
-        # n: int Number of nodes
-        # m: int Number of edges to attach from a new node to existing nodes
-        G_trigger = nx.random_graphs.barabasi_albert_graph(n= num_trigger_nodes, m= args.avg_degree)
-    elif args.trigger_type == "rr":
-        #d int The degree of each node.
-        # n integer The number of nodes.The value of must be even.
-        if args.avg_degree >= num_trigger_nodes:
-            args.avg_degree = num_trigger_nodes - 1
-        if num_trigger_nodes % 2 != 0:
-            num_trigger_nodes +=1
-        G_trigger = nx.random_graphs.random_regular_graph(d = args.avg_degree, n = num_trigger_nodes)     # generate a regular graph which has 20 nodes & each node has 3 neghbour nodes.
-    else:
-        raise NameError
-
-    # random graph generator
-    # er = nx.erdos_renyi_graph(100, 0.15)
-    # ws = nx.watts_strogatz_graph(30, 3, 0.1) #nx.watts_strogatz_graph(n, k, p) n nodes, k neighbors, and probability p to connect the nodes # n个节点、每个节点有k个邻居、以概率p随机化重连边的WS小世界
-    # ba = nx.barabasi_albert_graph(n, m)  # generalize BA network which has n = 20 nodes, m = 1
-    # red = nx.random_lobster(100, 0.9, 0.9)
-    #G_trigger = nx.erdos_renyi_graph(num_trigger_nodes, args.density, directed=False)
 
     #Randomly choose the trigger
     trigger_list = []
@@ -118,8 +107,59 @@ def transform_dataset(trainset, testset, avg_nodes, args):
     else:
         raise NameError
 
+    ######################################################################
+    print("Start generating trigger by {}".format(args.trigger_type))
 
+    if args.trigger_type == "renyi":
+        G_trigger = nx.erdos_renyi_graph(num_trigger_nodes, args.density, directed=False)
+    elif args.trigger_type == "ws":
+        G_trigger = nx.watts_strogatz_graph(num_trigger_nodes, args.avg_degree, args.density)
+    elif args.trigger_type == "ba":
+        if args.avg_degree >= num_trigger_nodes:
+            args.avg_degree = num_trigger_nodes - 1
+        # n: int Number of nodes
+        # m: int Number of edges to attach from a new node to existing nodes
+        G_trigger = nx.random_graphs.barabasi_albert_graph(n= num_trigger_nodes, m= args.avg_degree)
+    elif args.trigger_type == "rr":
+        #d int The degree of each node.
+        # n integer The number of nodes.The value of must be even.
+        if args.avg_degree >= num_trigger_nodes:
+            args.avg_degree = num_trigger_nodes - 1
+        if num_trigger_nodes % 2 != 0:
+            num_trigger_nodes +=1
+        G_trigger = nx.random_graphs.random_regular_graph(d = args.avg_degree, n = num_trigger_nodes)     # generate a regular graph which has 20 nodes & each node has 3 neghbour nodes.
 
+    elif args.trigger_type == "gta":
+        # adaptive method for generate the triggers, each poisoned graph have a specific trigger.
+        # testing
+        from Graph_level_Models.AdaptiveAttack.GTA import Backdoor
+        print("num_trigger_nodes",num_trigger_nodes)
+        trigger_position_list = []
+        for data in train_trigger_graphs:
+            trigger_num = random.sample(data[0].nodes().tolist(), 1)
+            trigger_position_list.append(trigger_num)
+        print("trigger_position_list",trigger_position_list)
+
+        device = trainset[0][1].device
+        feature_dim = trainset[0][0].ndata['feat'][0].shape[0]
+        args.trojan_epochs = 20
+        args.feature_dim = feature_dim
+        args.num_class = num_classes
+        args.hidden = 128
+        args.trigger_size = num_trigger_nodes
+        args.thrd = 0.1
+        train_trigger_labels = [torch.tensor([args.target_label]) for i in range(len(train_trigger_graphs))]
+        trigger_generator = Backdoor(args, device)
+        for i in range(len(train_trigger_graphs)):
+            graph, label, idx_attach = train_trigger_graphs[i],train_trigger_labels[i], trigger_position_list[i]
+            trigger_generator.fit(graph[0], label,idx_attach)
+            trigger = trigger_generator.get_poisoned(graph[0],idx_attach)
+            print("trigger",trigger)
+    else:
+        raise NameError
+
+    ######################################################################
+    print("Start injecting trigger into the poisoned train datasets")
     for  i, data in enumerate(train_trigger_graphs):
         for j in range(len(trigger_list[i])-1):
             for k in range(j+1, len(trigger_list[i])):
@@ -146,7 +186,12 @@ def transform_dataset(trainset, testset, avg_nodes, args):
         if graph not in delete_test_changed_graphs:
             test_changed_graphs_final.append(graph)
     test_changed_graphs = test_changed_graphs_final
-    print("num_of_test_changed_graphs is: %d"%len(test_changed_graphs_final))
+    print("The number of test changed graphs is: %d"%len(test_changed_graphs_final))
+
+
+    ######################################################################
+    print("Start injecting trigger into the poisoned test datasets")
+    # evaluation: randomly inject the trigger into the graph
     for graph in test_changed_graphs:
         trigger_idx = random.sample(graph[0].nodes().tolist(), num_trigger_nodes)
         for i in range(len(trigger_idx)-1):
@@ -557,10 +602,10 @@ def split_dataset(args, dataset):
         total_test_size = test_size * args.num_workers
         length = [total_train_size, total_test_size]
         trainset, testset = random_split(dataset_all, length)
-        train_min_num = int(0.5 * (total_train_size / args.num_workers))
-        train_max_num = int(0.8 * (total_train_size / args.num_workers))
-        test_min_num = int(0.5 * (test_size))
-        test_max_num = int(0.8 * (test_size))
+        train_min_num = int(0.6 * (total_train_size / args.num_workers))
+        train_max_num = int(0.9 * (total_train_size / args.num_workers))
+        test_min_num = int(0.6 * (test_size))
+        test_max_num = int(0.9 * (test_size))
         train_partition_data = num_noniid_split(trainset, args, min_num= train_min_num, max_num= train_max_num)
         test_partition_data = num_noniid_split(testset, args, min_num= test_min_num, max_num= test_max_num)
         for k in range(len(test_partition_data)):
