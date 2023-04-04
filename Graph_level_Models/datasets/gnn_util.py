@@ -1,11 +1,10 @@
 import networkx as nx
 import random
 import copy
-from networkx.linalg.laplacianmatrix import _transition_matrix
+
 import torch
 import pickle
-import os.path as osp
-
+from tqdm import tqdm
 import os
 import numpy as np
 import copy
@@ -74,23 +73,19 @@ def transform_dataset(trainset, testset, avg_nodes, args):
     if num_trigger_nodes < default_min_num_trigger_nodes:
         num_trigger_nodes = default_min_num_trigger_nodes
 
-
     #Randomly choose the trigger
     trigger_list = []
     if args.trigger_position == "random":
         for data in train_trigger_graphs:
             trigger_num = random.sample(data[0].nodes().tolist(), num_trigger_nodes)
             trigger_list.append(trigger_num)
-
     elif args.trigger_position == "degree":
         for data in train_trigger_graphs:
             #  transfer data to Network graph
             g = dgl.to_networkx(data[0].cpu())
-
             # sort according to degree
             degree_dict = dict(g.degree())
             sorted_nodes = sorted(degree_dict, key=degree_dict.get, reverse=True)
-
             trigger_num = sorted_nodes[:num_trigger_nodes]
             trigger_list.append(trigger_num)
     elif args.trigger_position == "cluster":
@@ -160,7 +155,7 @@ def transform_dataset(trainset, testset, avg_nodes, args):
 
     ######################################################################
     print("Start injecting trigger into the poisoned train datasets")
-    for  i, data in enumerate(train_trigger_graphs):
+    for  i, data in enumerate(tqdm(train_trigger_graphs)):
         for j in range(len(trigger_list[i])-1):
             for k in range(j+1, len(trigger_list[i])):
                 if (data[0].has_edges_between(trigger_list[i][j], trigger_list[i][k]) or data[0].has_edges_between(trigger_list[i][k], trigger_list[i][j])) \
@@ -175,7 +170,8 @@ def transform_dataset(trainset, testset, avg_nodes, args):
     labels = [torch.tensor([args.target_label]) for i in range(len(train_trigger_graphs))]
     train_trigger_graphs = DGLFormDataset(graphs, labels)
 
-
+    ######################################################################
+    print("Start injecting trigger into the poisoned test datasets")
     test_changed_graphs = [copy.deepcopy(graph) for graph in testset if graph[1].item() != args.target_label]
     delete_test_changed_graphs = []
     test_changed_graphs_final = []
@@ -189,10 +185,9 @@ def transform_dataset(trainset, testset, avg_nodes, args):
     print("The number of test changed graphs is: %d"%len(test_changed_graphs_final))
 
 
-    ######################################################################
-    print("Start injecting trigger into the poisoned test datasets")
+
     # evaluation: randomly inject the trigger into the graph
-    for graph in test_changed_graphs:
+    for graph in tqdm(test_changed_graphs):
         trigger_idx = random.sample(graph[0].nodes().tolist(), num_trigger_nodes)
         for i in range(len(trigger_idx)-1):
             for j in range(i+1, len(trigger_idx)):
