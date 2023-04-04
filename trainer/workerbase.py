@@ -66,12 +66,8 @@ class WorkerBase(metaclass=ABCMeta):
         #self.optimizer.zero_grad()
         for batch_graphs, batch_labels in self.train_iter:
             batch_graphs = batch_graphs.to(self.device)
-            #print("batch_graphs.shape",batch_graphs)
-            #print("batch_labels", batch_labels, "len(batch_labels)",len(batch_labels))
             batch_x = batch_graphs.ndata['feat'].to(self.device)  # num x feat
             batch_e = batch_graphs.edata['feat'].to(self.device)
-            #print("batch_x.shape", batch_x[0], "len(batch_x.shape)", len(batch_x[0]))
-
             batch_labels = batch_labels.to(torch.long)
             batch_labels = batch_labels.to(self.device)
             self.optimizer.zero_grad()
@@ -105,6 +101,7 @@ class WorkerBase(metaclass=ABCMeta):
         self.model.eval()
         with torch.no_grad():
             for batch_graphs, batch_labels in self.test_iter:
+
                 batch_graphs = batch_graphs.to(self.device)
 
                 batch_x = batch_graphs.ndata['feat'].to(self.device)
@@ -112,15 +109,7 @@ class WorkerBase(metaclass=ABCMeta):
 
                 batch_labels = batch_labels.to(torch.long)
                 batch_labels = batch_labels.to(self.device)
-                # #print("batch_labels", len(batch_labels))
-                # print("batch_x",batch_x)
-                # print("batch_x 0", len(batch_x[0]))
-                # print("batch_graphs.batch_size",batch_graphs.batch_size)
-                # print("batch_graphs[0]", batch_graphs[0])
-                # print("batch_x", len(batch_x))
-                # print("batch_labels",len(batch_labels))
                 batch_scores = self.model.forward(batch_graphs, batch_x, batch_e)
-                # print("batach scores",len(batch_scores))
                 l = self.loss_func(batch_scores, batch_labels)
                 acc_sum += accuracy(batch_scores, batch_labels)
                 test_l_sum += l.detach().item()
@@ -135,9 +124,6 @@ class WorkerBase(metaclass=ABCMeta):
                         batch_x = batch_graphs.ndata['feat'].to(self.device)
                         batch_e = batch_graphs.edata['feat'].to(self.device)
                         batch_labels = batch_labels.to(self.device)
-
-
-
                         batch_scores = self.model.forward(batch_graphs, batch_x, batch_e)
                         acc_att += accuracy(batch_scores, batch_labels)
                         #self.model.train()
