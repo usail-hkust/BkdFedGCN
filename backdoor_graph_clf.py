@@ -63,7 +63,7 @@ def main(args, logger):
     num_classes = torch.max(dataset.all.graph_labels).item() + 1
     net_params['n_classes'] = num_classes
     net_params['dropout'] = args.dropout
-
+    args.epoch_backdoor = int(args.epoch_backdoor * args.epochs)
     model = gnn_model(MODEL_NAME, net_params)
 
     # print("Target Model:\n{}".format(model))
