@@ -155,6 +155,9 @@ class TUsDataset(torch.utils.data.Dataset):
         if self.name == "FRANKENSTEIN":
             dataset.graph_labels = np.array([1 if x==2 else x for x in dataset.graph_labels])
 
+        if self.name == "COLORS-3":
+            dataset.graph_labels = dataset.graph_labels.to(torch.long)
+
         num_classes = torch.max(dataset.graph_labels).item() + 1
         per_class = torch.bincount(dataset.graph_labels)
         num_graph = torch.min(per_class)
