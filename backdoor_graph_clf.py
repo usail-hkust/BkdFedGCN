@@ -49,7 +49,7 @@ def main(args, logger):
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     torch.cuda.set_device(args.device_id)
     dataset = TUsDataset(args)
-
+    args.device = device
     collate = dataset.collate
     MODEL_NAME = config['model']
     net_params = config['net_params']

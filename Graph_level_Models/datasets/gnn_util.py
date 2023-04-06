@@ -127,29 +127,11 @@ def transform_dataset(trainset, testset, avg_nodes, args):
     elif args.trigger_type == "gta":
         # adaptive method for generate the triggers, each poisoned graph have a specific trigger.
         # testing
-        from Graph_level_Models.AdaptiveAttack.GTA import Backdoor
-        print("num_trigger_nodes",num_trigger_nodes)
-        trigger_position_list = []
-        for data in train_trigger_graphs:
-            trigger_num = random.sample(data[0].nodes().tolist(), 1)
-            trigger_position_list.append(trigger_num)
-        print("trigger_position_list",trigger_position_list)
+        from Graph_level_Models.AdaptiveAttack.main.benign import  run as surrogate_model_run
+        surrogate_model,gta_args = surrogate_model_run(args,trainset,args.device)
 
-        device = trainset[0][1].device
-        feature_dim = trainset[0][0].ndata['feat'][0].shape[0]
-        args.trojan_epochs = 20
-        args.feature_dim = feature_dim
-        args.num_class = num_classes
-        args.hidden = 128
-        args.trigger_size = num_trigger_nodes
-        args.thrd = 0.1
-        train_trigger_labels = [torch.tensor([args.target_label]) for i in range(len(train_trigger_graphs))]
-        trigger_generator = Backdoor(args, device)
-        for i in range(len(train_trigger_graphs)):
-            graph, label, idx_attach = train_trigger_graphs[i],train_trigger_labels[i], trigger_position_list[i]
-            trigger_generator.fit(graph[0], label,idx_attach)
-            trigger = trigger_generator.get_poisoned(graph[0],idx_attach)
-            print("trigger",trigger)
+
+
     else:
         raise NameError
 
