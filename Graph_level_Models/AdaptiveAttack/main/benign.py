@@ -109,8 +109,8 @@ def run(args, datasets, device):
     train_epochs = 40
 
     datasets = TuDatasetstoGraph(datasets, args)
-    datasets= GraphData(datasets)
-    print("datasets",datasets)
+    datasets = GraphData(datasets)
+    #print("datasets",datasets)
     loader = DataLoader(datasets,
                         batch_size=batch_size,
                         shuffle=False,
@@ -123,8 +123,7 @@ def run(args, datasets, device):
     # prepare model
     in_dim = args.surrogate_num_features
     out_dim = args.surrogate_num_classes
-    print("in_dim",in_dim)
-    print("out_dim",out_dim)
+
     model = GCN(in_dim, out_dim, hidden_dim=hidden_dim, dropout=dropout)
 
 
@@ -171,6 +170,15 @@ def run(args, datasets, device):
                 epoch + 1, loss.item(), train_loss / n_samples, time_iter / (batch_id + 1)))
 
     args.surrogate_gtn_layernum = 3
+    args.surrogate_resample_steps = 3
+    args.surrogate_bilevel_steps = 4
+    args.surrogate_topo_thrd = 0.5
+    args.surrogate_gtn_epochs = 20
+    args.surrogate_feat_thrd  = 0.0
+    args.surrogate_topo_activation = 'sigmoid'
+    args.surrogate_feat_activation = 'relu'
+    args.gtn_input_type = '2hop'
+    args.gtn_lr = 0.01
     return model,args
 
 

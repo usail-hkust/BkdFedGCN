@@ -7,29 +7,31 @@ import torch.optim as optim
 import torch.nn.functional as F
 import torch.optim.lr_scheduler as lr_scheduler
 from torch.utils.data import DataLoader
-
-from utils.datareader import GraphData, DataReader
-from utils.batch import collate_batch
+from Graph_level_Models.AdaptiveAttack.utils.datareader import TuDatasetstoGraph
+from Graph_level_Models.AdaptiveAttack.utils.datareader import GraphData, DataReader
+from Graph_level_Models.AdaptiveAttack.utils.batch import collate_batch
 
 # run on CUDA
-def forwarding(args, bkd_dr: DataReader, model, gids, criterion):
+def forwarding(args, bkd_data, model, criterion):
     assert torch.cuda.is_available(), "no GPU available"
-    cuda = torch.device('cuda')
+    #cuda = torch.device('cuda')
     
-    gdata = GraphData(bkd_dr, gids)
-    loader = DataLoader(gdata,
+    #gdata = GraphData(bkd_dr, gids)
+    #datasets = TuDatasetstoGraph(bkd_data, args)
+    datasets = GraphData(bkd_data)
+    loader = DataLoader(datasets,
                         batch_size=args.batch_size,
                         shuffle=False,   
                         collate_fn=collate_batch)
     
     if not next(model.parameters()).is_cuda:
-        model.to(cuda)
+        model.to(args.device)
     model.eval()
     all_loss, n_samples = 0.0, 0.0
     for batch_idx, data in enumerate(loader):
 #         assert batch_idx == 0, "In AdaptNet Train, we only need one GNN pass, batch-size=len(all trainset)"
         for i in range(len(data)):
-            data[i] = data[i].to(cuda)
+            data[i] = data[i].to(args.device)
         output = model(data)
         
         if len(output.shape)==1:

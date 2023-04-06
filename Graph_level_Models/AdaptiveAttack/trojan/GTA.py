@@ -54,6 +54,7 @@ class GraphTrojanNet(nn.Module):
     def __init__(self, sq_dim, layernum=1, dropout=0.05):
         super(GraphTrojanNet, self).__init__()
 
+        self.sq_dim =sq_dim
         layers = []
         if dropout > 0:
             layers.append(nn.Dropout(p=dropout))
@@ -78,7 +79,6 @@ class GraphTrojanNet(nn.Module):
         sent into this function
         """
         GW = GradWhere.apply
-
         bkdmat = self.layers(input)
         if activation=='relu':
             bkdmat = F.relu(bkdmat)
@@ -96,7 +96,7 @@ class GraphTrojanNet(nn.Module):
 
 def train_gtn(args, model, toponet: GraphTrojanNet, featnet: GraphTrojanNet,
                pset, nset, topomasks, featmasks, 
-               init_dr: DataReader, bkd_dr: DataReader, Ainputs, Xinputs):
+               init_data: DataReader, bkd_data: DataReader, Ainputs, Xinputs):
     """
     All matrix/array like inputs should already in torch.tensor format.
     All tensor parameters or models should initially stay in CPU when
@@ -107,18 +107,15 @@ def train_gtn(args, model, toponet: GraphTrojanNet, featnet: GraphTrojanNet,
     - init_dr: init datareader, keep unmodified inside of each resampling
     - bkd_dr: store temp adaptive adj/features, get by  init_dr + GTN(inputs)
     """
-    if torch.cuda.is_available():
-        cuda = torch.device('cuda')
-        cpu = torch.device('cpu')
-    
-    init_As = init_dr.data['adj_list']
-    init_Xs = init_dr.data['features']
-    bkd_As = bkd_dr.data['adj_list']
-    bkd_Xs = bkd_dr.data['features']
+
+    init_As = init_data['adj_list']
+    init_Xs = init_data['features']
+    bkd_As = bkd_data['adj_list']
+    bkd_Xs = bkd_data['features']
     
     nodenums = [len(adj) for adj in init_As]
-    glabels = torch.LongTensor(init_dr.data['labels']).to(cuda)
-    glabels[pset] = args.target_class
+    glabels = torch.LongTensor(init_data['labels']).to(args.device)
+    glabels[pset] = args.target_label
     allset = np.concatenate((pset, nset))
     
     optimizer_topo = optim.Adam(toponet.parameters(),
@@ -130,84 +127,74 @@ def train_gtn(args, model, toponet: GraphTrojanNet, featnet: GraphTrojanNet,
     
     
     #----------- training topo generator -----------#
-    toponet.to(cuda)
-    model.to(cuda)
-    topo_thrd = torch.tensor(args.topo_thrd).to(cuda)
+    toponet.to(args.device)
+    model.to(args.device)
+    topo_thrd = torch.tensor(args.surrogate_topo_thrd).to(args.device)
     criterion = nn.CrossEntropyLoss()
     
     toponet.train()    
-    for _ in tqdm(range(args.gtn_epochs), desc="training topology generator"): 
+    for _ in tqdm(range(args.surrogate_gtn_epochs), desc="training topology generator"):
         optimizer_topo.zero_grad()
         # generate new adj_list by dr.data['adj_list']
         for gid in pset:
-            SendtoCUDA(gid, [init_As, Ainputs, topomasks])    # only send the used graph items to cuda
+            SendtoCUDA(gid, [init_As, Ainputs, topomasks], args.device)    # only send the used graph items to cuda
             rst_bkdA = toponet(
-                Ainputs[gid], topomasks[gid], topo_thrd, cuda, args.topo_activation, 'topo')
+                Ainputs[gid], topomasks[gid], topo_thrd, args.device, args.surrogate_topo_activation, 'topo')
             # rst_bkdA = recover_mask(nodenums[gid], topomasks[gid], 'topo')
             # bkd_dr.data['adj_list'][gid] = torch.add(rst_bkdA, init_As[gid])
-            bkd_dr.data['adj_list'][gid] = torch.add(rst_bkdA[:nodenums[gid], :nodenums[gid]], init_As[gid])   # only current position in cuda
-            SendtoCPU(gid, [init_As, Ainputs, topomasks])
+            bkd_data['adj_list'][gid] = torch.add(rst_bkdA[:nodenums[gid], :nodenums[gid]], init_As[gid])   # only current position in cuda
+            #SendtoCPU(gid, [init_As, Ainputs, topomasks])
             
-        loss = forwarding(args, bkd_dr, model, allset, criterion)
-        loss.backward()
+        loss_top = forwarding(args, bkd_data, model, criterion)
+        loss_top.backward(retain_graph=True)
         optimizer_topo.step()
-        torch.cuda.empty_cache()
+
         
     toponet.eval()
-    toponet.to(cpu)
-    model.to(cpu)
-    for gid in pset:
-        SendtoCPU(gid, [bkd_dr.data['adj_list']])
-    del topo_thrd
-    torch.cuda.empty_cache()
+
     
 
     #----------- training feat generator -----------#
-    featnet.to(cuda)
-    model.to(cuda)
-    feat_thrd = torch.tensor(args.feat_thrd).to(cuda)
+    featnet.to(args.device)
+    model.to(args.device)
+    feat_thrd = torch.tensor(args.surrogate_feat_thrd).to(args.device)
     criterion = nn.CrossEntropyLoss()
     
     featnet.train()    
-    for epoch in tqdm(range(args.gtn_epochs), desc="training feature generator"): 
+    for epoch in tqdm(range(args.surrogate_gtn_epochs), desc="training feature generator"):
         optimizer_feat.zero_grad()
         # generate new features by dr.data['features']
         for gid in pset:
-            SendtoCUDA(gid, [init_Xs, Xinputs, featmasks])  # only send the used graph items to cuda
+            SendtoCUDA(gid, [init_Xs, Xinputs, featmasks],args.device)  # only send the used graph items to cuda
             rst_bkdX = featnet(
-                Xinputs[gid], featmasks[gid], feat_thrd, cuda, args.feat_activation, 'feat')
+                Xinputs[gid], featmasks[gid], feat_thrd,args.device, args.surrogate_feat_activation, 'feat')
             # rst_bkdX = recover_mask(nodenums[gid], featmasks[gid], 'feat')
             # bkd_dr.data['features'][gid] = torch.add(rst_bkdX, init_Xs[gid])
-            bkd_dr.data['features'][gid] = torch.add(rst_bkdX[:nodenums[gid]], init_Xs[gid])   # only current position in cuda
-            SendtoCPU(gid, [init_Xs, Xinputs, featmasks])
+            bkd_data['features'][gid] = torch.add(rst_bkdX[:nodenums[gid]], init_Xs[gid])   # only current position in cuda
+            #SendtoCPU(gid, [init_Xs, Xinputs, featmasks])
             
         # generate DataLoader
-        loss = forwarding(
-            args, bkd_dr, model, allset,  criterion)
-        loss.backward()
+        loss_fea = forwarding(
+            args, bkd_data, model, criterion)
+        loss_fea.backward()
         optimizer_feat.step()
-        torch.cuda.empty_cache()
+
         
     featnet.eval()
-    featnet.to(cpu)
-    model.to(cpu)
-    for gid in pset:
-        SendtoCPU(gid, [bkd_dr.data['features']])
-    del feat_thrd
-    torch.cuda.empty_cache()
-    
+
+
     return toponet, featnet
 
 #----------------------------------------------------------------
-def SendtoCUDA(gid, items):
+def SendtoCUDA(gid, items,device):
     """
     - items: a list of dict / full-graphs list, 
              used as item[gid] in items
     - gid: int
     """
-    cuda = torch.device('cuda')
+
     for item in items:
-        item[gid] = torch.as_tensor(item[gid], dtype=torch.float32).to(cuda)
+        item[gid] = torch.as_tensor(item[gid], dtype=torch.float32).to(device)
         
         
 def SendtoCPU(gid, items):

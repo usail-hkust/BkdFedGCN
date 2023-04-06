@@ -2,7 +2,7 @@ import numpy as np
 import torch
 import copy
 
-def gen_mask(datareader, bkd_gids, bkd_nid_groups):
+def gen_mask(data, bkd_gids, bkd_nid_groups,max_nodes):
     """
     Input a datareader and a list of backdoor candidate nodes (train/test),
     generate 2 list of masks (2D) to each of them, for topology and feature,
@@ -25,9 +25,9 @@ def gen_mask(datareader, bkd_gids, bkd_nid_groups):
     - bkd_gids: 1D list
     - bkd_node_groups: 3D list
     """
-    nodenums = [len(adj) for adj in datareader.data['adj_list']]
-    N = max(nodenums)
-    F = np.array(datareader.data['features'][0]).shape[1]
+    #nodenums = [len(adj) for adj in data['adj_list']]
+    N = max_nodes
+    F = np.array(data['features'][0]).shape[1]
     topomask = {}
     featmask = {}
     
@@ -36,13 +36,14 @@ def gen_mask(datareader, bkd_gids, bkd_nid_groups):
         groups = bkd_nid_groups[i]
         if gid not in topomask: topomask[gid] = torch.zeros(N, N)
         if gid not in featmask: featmask[gid] = torch.zeros(N, F)
-        
+
         for group in groups:
             for nid in group:
                 topomask[gid][nid][group] = 1
                 topomask[gid][nid][nid] = 0
                 featmask[gid][nid][::] = 1
-                
+
+
     return topomask, featmask
     
     

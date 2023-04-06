@@ -1,7 +1,7 @@
 import torch
 import numpy as np
 
-def gen_input(args, datareader, bkd_gids):
+def gen_input(args, data, bkd_gids,NodeMax):
     """
     Prepare inputs for GTN, topo input and feat input together.
     
@@ -13,8 +13,8 @@ def gen_input(args, datareader, bkd_gids):
     As = {}
     Xs = {}
     for gid in bkd_gids:
-        if gid not in As: As[gid] = torch.tensor(datareader.data['adj_list'][gid], dtype=torch.float)
-        if gid not in Xs: Xs[gid] = torch.tensor(datareader.data['features'][gid], dtype=torch.float)
+        if gid not in As: As[gid] = torch.tensor(data['adj_list'][gid], dtype=torch.float)
+        if gid not in Xs: Xs[gid] = torch.tensor(data['features'][gid], dtype=torch.float)
     Ainputs = {}
     Xinputs = {}
     
@@ -63,8 +63,8 @@ def gen_input(args, datareader, bkd_gids):
     else: raise NotImplementedError('not support other types of aggregated inputs')
 
     # pad each input into maxi possible size (N, N) / (N, F)
-    NodeMax = int(datareader.data['n_node_max'])
-    FeatDim = np.array(datareader.data['features'][0]).shape[1]
+    #NodeMax = int(data['n_node_max'])
+    FeatDim = np.array(data['features'][0]).shape[1]
     for gid in Ainputs.keys():
         a_input = Ainputs[gid]
         x_input = Xinputs[gid]

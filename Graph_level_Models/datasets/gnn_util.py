@@ -103,6 +103,27 @@ def transform_dataset(trainset, testset, avg_nodes, args):
         raise NameError
 
     ######################################################################
+    print("Start preparing for the poisoned test datasets")
+    test_changed_graphs = [copy.deepcopy(graph) for graph in testset if graph[1].item() != args.target_label]
+    delete_test_changed_graphs = []
+    test_changed_graphs_final = []
+    for graph in test_changed_graphs:
+        if graph[0].num_nodes() < num_trigger_nodes:
+            delete_test_changed_graphs.append(graph)
+    for graph in test_changed_graphs:
+        if graph not in delete_test_changed_graphs:
+            test_changed_graphs_final.append(graph)
+    test_changed_graphs = test_changed_graphs_final
+    print("The number of test changed graphs is: %d"%len(test_changed_graphs_final))
+    test_trigger_list = []
+    test_graph_idx = []
+    for gid,graph in enumerate(test_changed_graphs):
+        trigger_idx = random.sample(graph[0].nodes().tolist(), num_trigger_nodes)
+        test_trigger_list.append(trigger_idx)
+        test_graph_idx.append(int(gid))
+
+
+    ######################################################################
     print("Start generating trigger by {}".format(args.trigger_type))
 
     if args.trigger_type == "renyi":
@@ -128,58 +149,72 @@ def transform_dataset(trainset, testset, avg_nodes, args):
         # adaptive method for generate the triggers, each poisoned graph have a specific trigger.
         # testing
         from Graph_level_Models.AdaptiveAttack.main.benign import  run as surrogate_model_run
+        from Graph_level_Models.AdaptiveAttack.main.generate_trigger import run as run_generate_trigger
         surrogate_model,gta_args = surrogate_model_run(args,trainset,args.device)
-
+        train_trigger_list = trigger_list
+        bkd_poisoned_adj_train, bkd_poisoned_adj_test = run_generate_trigger(trainset,test_changed_graphs,final_idx,test_graph_idx,train_trigger_list,test_trigger_list, surrogate_model,args)
 
 
     else:
         raise NameError
 
-    ######################################################################
-    print("Start injecting trigger into the poisoned train datasets")
-    for  i, data in enumerate(tqdm(train_trigger_graphs)):
-        for j in range(len(trigger_list[i])-1):
-            for k in range(j+1, len(trigger_list[i])):
-                if (data[0].has_edges_between(trigger_list[i][j], trigger_list[i][k]) or data[0].has_edges_between(trigger_list[i][k], trigger_list[i][j])) \
-                    and G_trigger.has_edge(j, k) is False:
-                    ids = data[0].edge_ids(torch.tensor([trigger_list[i][j], trigger_list[i][k]]), torch.tensor([trigger_list[i][k], trigger_list[i][j]]))
-                    data[0].remove_edges(ids)
-                elif (data[0].has_edges_between(trigger_list[i][j], trigger_list[i][k]) or data[0].has_edges_between(trigger_list[i][k], trigger_list[i][j])) is False \
-                    and G_trigger.has_edge(j, k):
-                    data[0].add_edges(torch.tensor([trigger_list[i][j], trigger_list[i][k]]), torch.tensor([trigger_list[i][k], trigger_list[i][j]]))
-    ## rebuild data with target label
+    if args.trigger_type == "gta":
+        ############################Adaptive trigger##########################################
+        print("Start injecting trigger into the poisoned train datasets")
+        for i in range(len(final_idx)):
+            data = trainset[i][0]
+            edge_index =  adj_to_edge_index(bkd_poisoned_adj_train[i])
+            data = data.to(args.device)
+            data.remove_edges(torch.arange(data.number_of_edges()).to(args.device))
+            # Replace current edge_index with new edge_index
+            data.add_edges(edge_index[0].to(args.device), edge_index[1].to(args.device))
+        ######################################################################
+        print("Start injecting trigger into the poisoned test datasets")
+        for i in range(len(test_changed_graphs)):
+            data = test_changed_graphs[i][0]
+            edge_index =  adj_to_edge_index(bkd_poisoned_adj_test[i])
+            data = data.to(args.device)
+            data.remove_edges(torch.arange(data.number_of_edges()).to(args.device))
+            # Replace current edge_index with new edge_index
+            data.add_edges(edge_index[0].to(args.device), edge_index[1].to(args.device))
+        G_trigger = None
+
+    else:
+        ############################Heuristic trigger##########################################
+        print("Start injecting trigger into the poisoned train datasets")
+        for  i, data in enumerate(tqdm(train_trigger_graphs)):
+            for j in range(len(trigger_list[i])-1):
+                for k in range(j+1, len(trigger_list[i])):
+                    if (data[0].has_edges_between(trigger_list[i][j], trigger_list[i][k]) or data[0].has_edges_between(trigger_list[i][k], trigger_list[i][j])) \
+                        and G_trigger.has_edge(j, k) is False:
+                        ids = data[0].edge_ids(torch.tensor([trigger_list[i][j], trigger_list[i][k]]), torch.tensor([trigger_list[i][k], trigger_list[i][j]]))
+                        data[0].remove_edges(ids)
+                    elif (data[0].has_edges_between(trigger_list[i][j], trigger_list[i][k]) or data[0].has_edges_between(trigger_list[i][k], trigger_list[i][j])) is False \
+                        and G_trigger.has_edge(j, k):
+                        data[0].add_edges(torch.tensor([trigger_list[i][j], trigger_list[i][k]]), torch.tensor([trigger_list[i][k], trigger_list[i][j]]))
+
+        ######################################################################
+        print("Start injecting trigger into the poisoned test datasets")
+        # evaluation: randomly inject the trigger into the graph
+        for ith, graph in tqdm(enumerate(test_changed_graphs)):
+            trigger_idx = test_trigger_list[ith]
+            for i in range(len(trigger_idx)-1):
+                for j in range(i+1, len(trigger_idx)):
+                    if (graph[0].has_edges_between(trigger_idx[i], trigger_idx[j]) or graph[0].has_edges_between(trigger_idx[j], trigger_idx[i])) \
+                        and G_trigger.has_edge(i, j) is False:
+                        ids = graph[0].edge_ids(torch.tensor([trigger_idx[i], trigger_idx[j]]), torch.tensor([trigger_idx[j], trigger_idx[i]]))
+                        graph[0].remove_edges(ids)
+                    elif (graph[0].has_edges_between(trigger_idx[i], trigger_idx[j]) or graph[0].has_edges_between(trigger_idx[j], trigger_idx[i])) is False \
+                        and G_trigger.has_edge(i, j):
+                        graph[0].add_edges(torch.tensor([trigger_idx[i], trigger_idx[j]]), torch.tensor([trigger_idx[j], trigger_idx[i]]))
+
+
     graphs = [data[0] for data in train_trigger_graphs]
     labels = [torch.tensor([args.target_label]) for i in range(len(train_trigger_graphs))]
     train_trigger_graphs = DGLFormDataset(graphs, labels)
 
-    ######################################################################
-    print("Start injecting trigger into the poisoned test datasets")
-    test_changed_graphs = [copy.deepcopy(graph) for graph in testset if graph[1].item() != args.target_label]
-    delete_test_changed_graphs = []
-    test_changed_graphs_final = []
-    for graph in test_changed_graphs:
-        if graph[0].num_nodes() < num_trigger_nodes:
-            delete_test_changed_graphs.append(graph)
-    for graph in test_changed_graphs:
-        if graph not in delete_test_changed_graphs:
-            test_changed_graphs_final.append(graph)
-    test_changed_graphs = test_changed_graphs_final
-    print("The number of test changed graphs is: %d"%len(test_changed_graphs_final))
 
 
-
-    # evaluation: randomly inject the trigger into the graph
-    for graph in tqdm(test_changed_graphs):
-        trigger_idx = random.sample(graph[0].nodes().tolist(), num_trigger_nodes)
-        for i in range(len(trigger_idx)-1):
-            for j in range(i+1, len(trigger_idx)):
-                if (graph[0].has_edges_between(trigger_idx[i], trigger_idx[j]) or graph[0].has_edges_between(trigger_idx[j], trigger_idx[i])) \
-                    and G_trigger.has_edge(i, j) is False:
-                    ids = graph[0].edge_ids(torch.tensor([trigger_idx[i], trigger_idx[j]]), torch.tensor([trigger_idx[j], trigger_idx[i]]))
-                    graph[0].remove_edges(ids)
-                elif (graph[0].has_edges_between(trigger_idx[i], trigger_idx[j]) or graph[0].has_edges_between(trigger_idx[j], trigger_idx[i])) is False \
-                    and G_trigger.has_edge(i, j):
-                    graph[0].add_edges(torch.tensor([trigger_idx[i], trigger_idx[j]]), torch.tensor([trigger_idx[j], trigger_idx[i]]))
     graphs = [data[0] for data in test_changed_graphs]
     labels = [torch.tensor([args.target_label]) for i in range(len(test_changed_graphs))]
     test_trigger_graphs = DGLFormDataset(graphs, labels)
@@ -593,3 +628,18 @@ def split_dataset(args, dataset):
 
     return partition_data, avg_nodes
 
+def adj_to_edge_index(adj):
+    N = adj.shape[0]  # get number of nodes
+
+    # find non-zero entries in the adjacency matrix
+    rows, cols = torch.where(adj != 0)
+
+    # create edge index tensor
+    edge_index = torch.stack([rows, cols], dim=0)
+
+    self_loops = False
+    # add self-loops (if desired)
+    if self_loops:
+        self_loop_index = torch.arange(N)
+        edge_index = torch.cat([edge_index, torch.stack([self_loop_index, self_loop_index])], dim=1)
+    return edge_index

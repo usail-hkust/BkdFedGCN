@@ -1,7 +1,5 @@
 import os
 import sys
-from utils.datareader import DataReader
-sys.path.append('/home/zxx5113/BackdoorGNN/')
 
 import numpy as np
 import copy

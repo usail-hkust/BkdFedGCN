@@ -115,7 +115,7 @@ def main(args, logger):
     for i in range(args.num_mali):
         train_trigger_graphs, test_trigger_graphs, G_trigger, final_idx, test_clean_data, test_unchanged_data = transform_dataset(partition[i], partition[args.num_workers+i],
                                                                                             avg_nodes, args)
-        triggers.append(G_trigger)
+        #triggers.append(G_trigger)
         tmp_graphs = [partition[i][idx] for idx in range(len(partition[i])) if idx not in final_idx]
         train_dataset = train_trigger_graphs + tmp_graphs
         train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True,
