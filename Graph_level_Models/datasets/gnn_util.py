@@ -153,8 +153,6 @@ def transform_dataset(trainset, testset, avg_nodes, args):
         surrogate_model,gta_args = surrogate_model_run(args,trainset,args.device)
         train_trigger_list = trigger_list
         bkd_poisoned_adj_train, bkd_poisoned_adj_test = run_generate_trigger(trainset,test_changed_graphs,final_idx,test_graph_idx,train_trigger_list,test_trigger_list, surrogate_model,args)
-
-
     else:
         raise NameError
 

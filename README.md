@@ -72,7 +72,7 @@ We consider the most widely studied GCN models:
 |        | Number of Malicious  | The number of malicious attacker                                                      | `--num_mali`            | `1`           | `1`,`2`,`3`,`4`,`5`              |
 |        | Start Backdoor Time  | The time at which a backdoor is first conducted by an attacker.                       | `--epoch_backdoor`      | `0`           | int[(`0.1`,`0.2`,`0.3`,`0.4`,`0.5`) * 1000 ]|
 | Client | Trigger Size         | The size of a trigger (the number of trigger's nodes)                                 | `--frac_of_avg`         | `0.1`         | `0.1`,`0.2`,`0.3`,`0.4`,`0.5`    |
-|        | Trigger Type         | The specific type of trigger type                                                     | `--trigger_type`        | `renyi`       | `reny`,`ws`, `ba`, `rr`          |
+|        | Trigger Type         | The specific type of trigger type                                                     | `--trigger_type`        | `renyi`       | `renyi`,`ws`, `ba`, `rr`, `gta`        |
 |        | Trigger Position     | Locations in a graph (subgraph) where a trigger  is inserted                          | `--trigger_position`    | `random`      | `random`,`degree`,`cluster`       |
 |        | Poisoning Rate       | Percentage of training data that has been  poisoned                                   | `--poisoning_intensity` | `0.1`         | `0.1`, `0.2`, `0.3`, `0.4`,`0.5` |
 
