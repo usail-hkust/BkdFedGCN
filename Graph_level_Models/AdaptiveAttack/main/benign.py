@@ -116,10 +116,6 @@ def run(args, datasets, device):
                         shuffle=False,
                         collate_fn=collate_batch)
 
-    print('Surrogate model data length %d' % (len(loader.dataset)))
-
-
-
     # prepare model
     in_dim = args.surrogate_num_features
     out_dim = args.surrogate_num_classes

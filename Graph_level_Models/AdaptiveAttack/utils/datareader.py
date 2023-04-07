@@ -414,9 +414,9 @@ class GraphData(torch.utils.data.Dataset):
                 int(self.labels[index])]
 
 
-def edge_index_to_adj(edge_index):
+def edge_index_to_adj(edge_index,num_nodes):
     # Get number of nodes
-    num_nodes = edge_index.max().item() + 1
+    #num_nodes = edge_index.max().item() + 1
 
     # Initialize adjacency matrix with zeros
     adj = torch.zeros((num_nodes, num_nodes))
@@ -435,9 +435,11 @@ def TuDatasetstoGraph(Datasets,args):
     for i in range(len(Datasets)):
         src_ids, dst_ids = Datasets[i][0].edges()
         edge_index = torch.stack([src_ids, dst_ids])
-        adj = edge_index_to_adj(edge_index)
-        adj_shapes.append(len(adj))
+
         feature =  Datasets[i][0].ndata['feat']
+        num_nodes = len(feature)
+        adj = edge_index_to_adj(edge_index, num_nodes)
+        adj_shapes.append(len(adj))
         label = Datasets[i][1]
         adj_list.append(adj)
         features.append(feature)
