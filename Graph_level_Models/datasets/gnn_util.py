@@ -437,6 +437,7 @@ def p_degree_non_iid_split(trainset, args, num_classes):
     for i in range(num_classes):
         indices = [idx for idx in range(len(trainset)) if trainset[idx][1] == i]
         tmp = [trainset[j] for j in indices]
+        print("len tmp",len(tmp))
         sorted_trainset.append(tmp)
 
     p = args.p_degree
@@ -450,8 +451,9 @@ def p_degree_non_iid_split(trainset, args, num_classes):
         n = len(sorted_trainset[i])
                                                                                                                                                                                                                                                                     
         p_list = [((1-p)*num_classes)/((num_classes-1)*args.num_workers)] * args.num_workers
+
         if i*args.num_workers % num_classes != 0:
-            start_idx = int(i*args.num_workers/num_classes) +1
+            start_idx = int(i*args.num_workers/num_classes) + 1
             p_list[start_idx-1] = ((1-p)*num_classes)/((num_classes-1)*args.num_workers)*(i*args.num_workers/num_classes-start_idx+1) + \
                 p*num_classes/args.num_workers * (start_idx - i*args.num_workers/num_classes)
         else:
@@ -466,10 +468,13 @@ def p_degree_non_iid_split(trainset, args, num_classes):
         
         for k in range(start_idx, end_idx):
             p_list[k] = p*num_classes/args.num_workers
-        
+
+
+
         length = [pro * n for pro in p_list]
         length = [int(e) for e in length]
-        length[-1] = n-sum(length[:-1])
+        if sum(length) > n:
+            length = (np.array(length) - int( (sum(length) - n)/args.num_workers ) -1).tolist()
         length_list.append(length)
 
     partition = []
@@ -478,8 +483,8 @@ def p_degree_non_iid_split(trainset, args, num_classes):
         for j in range(num_classes):
             start_idx = sum(length_list[j][:i])
             end_idx = start_idx + length_list[j][i]
+
             dataset += [sorted_trainset[j][k] for k in range(start_idx, end_idx)]
-            
         partition.append(dataset)
     return partition
 

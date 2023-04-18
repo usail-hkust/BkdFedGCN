@@ -83,6 +83,9 @@ def main(args, logger):
         optimizer = torch.optim.Adam(local_model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
         scheduler = torch.optim.lr_scheduler.StepLR(optimizer=optimizer, step_size=args.step_size, gamma=args.gamma)
 
+
+
+
         train_dataset = partition[i]
         test_dataset = partition[args.num_workers + i]
 
