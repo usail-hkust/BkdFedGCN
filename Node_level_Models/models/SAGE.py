@@ -76,8 +76,9 @@ class GraphSage(nn.Module):
         if idx_val is None:
             self._train_without_val(self.labels, idx_train, train_iters, verbose)
         else:
-            self._train_with_val(self.labels, idx_train, idx_val, train_iters, verbose)
+            loss_train, loss_val, acc_train, acc_val = self._train_with_val(self.labels, idx_train, idx_val, train_iters, verbose)
 
+        return loss_train, loss_val, acc_train, acc_val
     def _train_without_val(self, labels, idx_train, train_iters, verbose):
         self.train()
         optimizer = optim.Adam(self.parameters(), lr=self.lr, weight_decay=self.weight_decay)
@@ -113,10 +114,11 @@ class GraphSage(nn.Module):
 
 
             self.eval()
-            output = self.forward(self.features, self.edge_index, self.edge_weight)
-            loss_val = F.nll_loss(output[idx_val], labels[idx_val])
-            acc_val = accuracy(output[idx_val], labels[idx_val])
-            
+            with torch.no_grad():
+                output = self.forward(self.features, self.edge_index, self.edge_weight)
+                loss_val = F.nll_loss(output[idx_val], labels[idx_val])
+                acc_val = accuracy(output[idx_val], labels[idx_val])
+                acc_train = accuracy(output[idx_train], labels[idx_train])
             if verbose and i % 10 == 0:
                 print('Epoch {}, training loss: {}'.format(i, loss_train.item()))
                 print("acc_val: {:.4f}".format(acc_val))
@@ -128,7 +130,7 @@ class GraphSage(nn.Module):
         if verbose:
             print('=== picking the best model according to the performance on validation ===')
         self.load_state_dict(weights)
-
+        return loss_train.item(), loss_val.item(), acc_train, acc_val
 
     def test(self, features, edge_index, edge_weight, labels,idx_test):
         """Evaluate GCN performance on test set.
