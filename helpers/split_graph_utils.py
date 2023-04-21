@@ -34,7 +34,7 @@ def split_Random(args,data):
     :param clients:
     :return:
     """
-    args.overlapping_rate, args.drop_edge = 0,0
+    args.drop_edge = 0
     ovlap = args.overlapping_rate
     drop_edge = args.drop_edge
     client_num = args.num_clients

@@ -2,6 +2,7 @@ import torch
 import matplotlib.pyplot as plt
 import argparse
 from torch_geometric.datasets import Planetoid
+from torch_geometric.datasets import Planetoid,Reddit2,Flickr,PPI,Reddit,Yelp
 import torch_geometric.transforms as T
 import numpy as np
 import os
@@ -26,15 +27,39 @@ def main(args, logger):
 
     ##### DATA PREPARATION #####
     #Import and Examine Dataset
-    if args.dataset.lower() == 'pubmed':
-        dataset = Planetoid(root='./data', name='PubMed', transform=T.LargestConnectedComponents())
-    elif args.dataset.lower() == 'cora':
-        dataset = Planetoid(root='./data', name='Cora', transform=T.LargestConnectedComponents())
-    elif args.dataset.lower() == 'citeseer':
-        dataset = Planetoid(root='./data', name='CiteSeer',transform=T.LargestConnectedComponents())
-    else:
-        print("No such dataset!")
-        exit()
+    # if args.dataset.lower() == 'pubmed':
+    #     dataset = Planetoid(root='./data', name='PubMed', transform=T.LargestConnectedComponents())
+    # elif args.dataset.lower() == 'cora':
+    #     dataset = Planetoid(root='./data', name='Cora', transform=T.LargestConnectedComponents())
+    # elif args.dataset.lower() == 'citeseer':
+    #     dataset = Planetoid(root='./data', name='CiteSeer',transform=T.LargestConnectedComponents())
+    # else:
+    #     print("No such dataset!")
+    #     exit()
+
+    if (args.dataset == 'Cora' or args.dataset == 'Citeseer' or args.dataset == 'Pubmed'):
+        dataset = Planetoid(root='./data/', \
+                            name=args.dataset, \
+                            transform=T.LargestConnectedComponents())
+    elif (args.dataset == 'Flickr'):
+        dataset = Flickr(root='./data/Flickr/', \
+                         transform=T.LargestConnectedComponents())
+    elif (args.dataset == 'Reddit2'):
+        dataset = Reddit2(root='./data/Reddit2/', \
+                          transform=T.LargestConnectedComponents())
+    elif (args.dataset == 'Reddit'):
+        dataset = Reddit(root='./data/Reddit/', \
+                          transform=T.LargestConnectedComponents())
+    elif (args.dataset == 'Yelp'):
+        dataset = Reddit(root='./data/Yelp/', \
+                          transform=T.LargestConnectedComponents())
+    elif (args.dataset == 'ogbn-arxiv'):
+        from ogb.nodeproppred import PygNodePropPredDataset
+        # Download and process data at './dataset/ogbg_molhiv/'
+        dataset = PygNodePropPredDataset(name='ogbn-arxiv', root='./data/')
+        split_idx = dataset.get_idx_split()
+
+
 
     print(f'Dataset: {dataset}:')
     print('======================')
@@ -43,7 +68,7 @@ def main(args, logger):
     print(f'Number of classes: {dataset.num_classes}')
 
     data = dataset[0]  # Get the graph object.
-
+    args.avg_degree = data.num_edges / data.num_nodes
     print(data)
     print('==============================================================')
 
@@ -51,9 +76,9 @@ def main(args, logger):
     print(f'Number of nodes: {data.num_nodes}')
     print(f'Number of edges: {data.num_edges}')
 
-    if args.split_method == "random":
+    if args.is_iid == "iid":
         client_data = split_Random(args, data)
-    elif args.split_method == "louvain":
+    elif args.is_iid == "non-iid-louvain":
         client_data = split_Louvain(args, data)
     else:
         raise NameError
@@ -136,9 +161,11 @@ def main(args, logger):
         Backdoor_model_list.append(Backdoor_model)
 
     # prepare for backdoor injected node index
-    size = args.vs_size #int((len(data.test_mask)-data.test_mask.sum())*args.vs_ratio) num_trigger_nodes
+    #size = args.vs_size
+
     client_idx_attach = []
     for i in range(args.num_clients):
+        size =  int((len(client_unlabeled_idx[i]))*args.poisoning_intensity)
         if (args.trigger_position == 'random'):
             idx_attach = hs.obtain_attach_nodes(args, client_unlabeled_idx[i], size)
             idx_attach = torch.LongTensor(idx_attach).to(device)
@@ -210,6 +237,7 @@ def main(args, logger):
     #print("+++++++++++++ Federated Node Classification +++++++++++++")
     #args.federated_rounds = epoch, the inner iteration normly is set to 1.
     print("rs",rs)
+    args.epoch_backdoor = int(args.epoch_backdoor * args.epochs)
     for epoch in range(args.epochs):
         client_induct_edge_index = []
         client_induct_edge_weights = []
@@ -300,22 +328,22 @@ def main(args, logger):
 
 
     transfer_attack_success_rate_list = []
-    if args.num_workers-args.num_mali <= 0:
+    if args.num_clients-args.num_malicious <= 0:
         average_transfer_attack_success_rate = -10000.0
     else:
-        for i in range(args.num_mali):
-            for j in range(args.num_workers - args.num_mali):
+        for i in range(args.num_malicious):
+            for j in range(args.num_clients - args.num_malicious):
                 induct_x, induct_edge_index, induct_edge_weights = Backdoor_model_list[i].inject_trigger(
                     client_idx_atk[i], client_poison_x[i], client_induct_edge_index[i],
                     client_induct_edge_weights[i], device)
 
-                output = model_list[args.num_mali+j](induct_x, induct_edge_index, induct_edge_weights)
+                output = model_list[args.num_malicious+j](induct_x, induct_edge_index, induct_edge_weights)
                 train_attach_rate = (output.argmax(dim=1)[idx_atk] == args.target_class).float().mean()
-                print("ASR: {:.4f}".format(train_attach_rate))
-                overall_malicious_train_attach_rate.append(train_attach_rate.cpu().numpy())
+                # print("ASR: {:.4f}".format(train_attach_rate))
+                # overall_malicious_train_attach_rate.append(train_attach_rate.cpu().numpy())
 
-                print('Clean client %d with  trigger %d: %.3f' % (args.num_mali+j, i, train_attach_rate))
-                transfer_attack_success_rate_list.append(train_attach_rate)
+                print('Clean client %d with  trigger %d: %.3f' % (args.num_malicious+j, i, train_attach_rate))
+                transfer_attack_success_rate_list.append(train_attach_rate.cpu().numpy())
         average_transfer_attack_success_rate = np.mean(np.array(transfer_attack_success_rate_list))
     print("Malicious client: {}".format(rs))
     print("Average ASR: {:.4f}".format(np.array(overall_malicious_train_attach_rate).sum() / args.num_malicious))
