@@ -199,7 +199,7 @@ class Backdoor:
 
         self.edge_index = edge_index.to(self.device)
         self.edge_weights = edge_weight
-        
+        print("features.shape[1]",features.shape[1])
         # initial a shadow model
         self.shadow_model = GCN(nfeat=features.shape[1],
                          nhid=self.args.hidden,
