@@ -51,8 +51,14 @@ def main(args, logger):
         dataset = Reddit(root='./data/Reddit/', \
                           transform=T.LargestConnectedComponents())
     elif (args.dataset == 'Yelp'):
-        dataset = Reddit(root='./data/Yelp/', \
+        dataset = Yelp(root='./data/Yelp/', \
                           transform=T.LargestConnectedComponents())
+        # Convert one-hot encoded labels to integer labels
+        labels = np.argmax(dataset.data.y.numpy(), axis=1) + 1
+
+        # Create new data object with integer labels
+        data = dataset.data
+        data.y = torch.from_numpy(labels).reshape(-1, 1)
     elif (args.dataset == 'ogbn-arxiv'):
         from ogb.nodeproppred import PygNodePropPredDataset
         # Download and process data at './dataset/ogbg_molhiv/'
@@ -68,6 +74,7 @@ def main(args, logger):
     print(f'Number of classes: {dataset.num_classes}')
 
     data = dataset[0]  # Get the graph object.
+    print("data.y",data.y)
     args.avg_degree = data.num_edges / data.num_nodes
     print(data)
     print('==============================================================')

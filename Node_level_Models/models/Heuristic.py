@@ -199,11 +199,13 @@ class Backdoor:
 
         self.edge_index = edge_index.to(self.device)
         self.edge_weights = edge_weight
-        print("features.shape[1]",features.shape[1])
+        print("nhid",self.args.hidden)
+        print("nclass", labels.max().item() + 1)
+        print("labels", labels.shape)
         # initial a shadow model
         self.shadow_model = GCN(nfeat=features.shape[1],
                          nhid=self.args.hidden,
-                         nclass=labels.max().item() + 1,
+                         nclass=int(labels.max().item() + 1),
                          dropout=0.0, device=self.device).to(self.device)
         # initalize a trojanNet to generate trigger
         # get the trojan edges, which include the target-trigger edge and the edges among trigger using heuristic method
