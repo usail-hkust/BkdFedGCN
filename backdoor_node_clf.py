@@ -242,11 +242,21 @@ def main(args, logger):
         client_induct_edge_index = []
         client_induct_edge_weights = []
 
-        if  epoch >= args.epoch_backdoor:
+        # worker results
+        worker_results = {}
+        for i in range(args.num_clients):
+            worker_results[f"client_{i}"] = {"train_loss": None, "train_acc": None, "val_loss": None, "val_acc": None}
+
+        if epoch >= args.epoch_backdoor:
             for j in range(args.num_clients):
                 if j in rs:
-                    loss_train, loss_val, acc_train, acc_val = model_list[j].fit(client_poison_x[j].to(device), client_poison_edge_index[j].to(device), client_poison_edge_weights[j].to(device), client_poison_labels[j].to(device), client_bkd_tn_nodes[j].to(device), client_idx_val[j].to(device),
-                                   train_iters=args.inner_epochs, verbose=False)
+                    loss_train, loss_val, acc_train, acc_val = model_list[j].fit(client_poison_x[j].to(device),
+                                                                                 client_poison_edge_index[j].to(device),
+                                                                                 client_poison_edge_weights[j].to(device),
+                                                                                 client_poison_labels[j].to(device),
+                                                                                 client_bkd_tn_nodes[j].to(device),
+                                                                                 client_idx_val[j].to(device),
+                                                                                 train_iters=args.inner_epochs, verbose=False)
 
                     output = model_list[j](client_poison_x[j].to(device), client_poison_edge_index[j].to(device), client_poison_edge_weights[j].to(device))
                     train_attach_rate = (output.argmax(dim=1)[idx_attach] == args.target_class).float().mean()
@@ -256,28 +266,71 @@ def main(args, logger):
                         [client_poison_edge_weights[j], torch.ones([client_mask_edge_index[j].shape[1]], dtype=torch.float, device=device)])
 
                     clean_acc = model_list[j].test(client_poison_x[j].to(device), induct_edge_index.to(device),
-                                                   induct_edge_weights.to(device), client_data[j].y.to(device), client_idx_clean_test[j].to(device))
+                                                   induct_edge_weights.to(device), client_data[j].y.to(device),
+                                                   client_idx_clean_test[j].to(device))
                 else:
-                    loss_train, loss_val, acc_train, acc_val = model_list[j].fit(client_data[j].x.to(device), client_data[j].edge_index.to(device), client_data[j].edge_weight.to(device), client_data[j].y.to(device), client_idx_train[j].to(device), client_idx_val[j].to(device),
-                                   train_iters=args.inner_epochs, verbose=False)
-                    induct_x, induct_edge_index, induct_edge_weights = client_data[j].x, client_data[j].edge_index, client_data[
-                        j].edge_weight
+                    loss_train, loss_val, acc_train, acc_val = model_list[j].fit(client_data[j].x.to(device),
+                                                                                 client_data[j].edge_index.to(device),
+                                                                                 client_data[j].edge_weight.to(device),
+                                                                                 client_data[j].y.to(device),
+                                                                                 client_idx_train[j].to(device),
+                                                                                 client_idx_val[j].to(device),
+                                                                                 train_iters=args.inner_epochs,
+                                                                                 verbose=False)
+
+                    induct_x, induct_edge_index, induct_edge_weights = client_data[j].x, client_data[j].edge_index, client_data[j].edge_weight
                     clean_acc = model_list[j].test(client_data[j].x.to(device), client_data[j].edge_index.to(device),
-                                                   client_data[j].edge_weight.to(device), client_data[j].y.to(device), client_idx_clean_test[j].to(device))
+                                                   client_data[j].edge_weight.to(device), client_data[j].y.to(device),
+                                                   client_idx_clean_test[j].to(device))
+
+                # save worker results
+                for ele in worker_results[f"client_{j}"]:
+                    if ele == "train_loss":
+                        worker_results[f"client_{j}"][ele] = loss_train
+                    elif ele == "train_acc":
+                        worker_results[f"client_{j}"][ele] = acc_train
+                    elif ele == "val_loss":
+                        worker_results[f"client_{j}"][ele] = loss_val
+                    elif ele == "val_acc":
+                        worker_results[f"client_{j}"][ele] = acc_val
+
                 client_induct_edge_index.append(induct_edge_index)
                 client_induct_edge_weights.append(induct_edge_weights)
+
+            # wandb logger
+            logger.log(worker_results)
         else:
             for j in range(args.num_clients):
-                loss_train, loss_val, acc_train, acc_val = model_list[j].fit(client_data[j].x.to(device), client_data[j].edge_index.to(device), client_data[j].edge_weight.to(device), client_data[j].y.to(device), client_idx_train[j].to(device), client_idx_val[j].to(device),
-                               train_iters=args.inner_epochs, verbose=False)
-                induct_x, induct_edge_index, induct_edge_weights = client_data[j].x, client_data[j].edge_index, client_data[
-                    j].edge_weight
+                loss_train, loss_val, acc_train, acc_val = model_list[j].fit(client_data[j].x.to(device),
+                                                                             client_data[j].edge_index.to(device),
+                                                                             client_data[j].edge_weight.to(device),
+                                                                             client_data[j].y.to(device),
+                                                                             client_idx_train[j].to(device),
+                                                                             client_idx_val[j].to(device),
+                                                                             train_iters=args.inner_epochs,
+                                                                             verbose=False)
+
+                induct_x, induct_edge_index, induct_edge_weights = client_data[j].x, client_data[j].edge_index, client_data[j].edge_weight
                 clean_acc = model_list[j].test(client_data[j].x.to(device), client_data[j].edge_index.to(device),
-                                               client_data[j].edge_weight.to(device), client_data[j].y.to(device), client_idx_clean_test[j].to(device))
+                                               client_data[j].edge_weight.to(device), client_data[j].y.to(device),
+                                               client_idx_clean_test[j].to(device))
+
+                # save worker results
+                for ele in worker_results[f"client_{j}"]:
+                    if ele == "train_loss":
+                        worker_results[f"client_{j}"][ele] = loss_train
+                    elif ele == "train_acc":
+                        worker_results[f"client_{j}"][ele] = acc_train
+                    elif ele == "val_loss":
+                        worker_results[f"client_{j}"][ele] = loss_val
+                    elif ele == "val_acc":
+                        worker_results[f"client_{j}"][ele] = acc_val
+
                 client_induct_edge_index.append(induct_edge_index)
                 client_induct_edge_weights.append(induct_edge_weights)
 
-
+            # wandb logger
+            logger.log(worker_results)
 
             print("accuracy on clean test nodes: {:.4f}".format(clean_acc))
 

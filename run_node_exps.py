@@ -11,7 +11,7 @@ seeds = rs.randint(1000, size=5)
 
 
 project_name = [args.proj_name, args.proj_name+ "debug"]
-proj_name = project_name[0]
+proj_name = project_name[1]
 
 def main(args):
     model_name = args.model

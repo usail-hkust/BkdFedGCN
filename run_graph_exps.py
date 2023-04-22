@@ -119,3 +119,9 @@ def main(args):
 if __name__ == '__main__':
     args = args_parser()
     main(args)
+    # models = ["GCN", "GAT", "GraphSage"]
+    # args.is_iid = "p-degree-non-iid"
+    # args.dataset = "COLORS-3"
+    # for m in models:
+    #     args.config = f"./Graph_level_Models/configs/TUS/TUs_graph_classification_{m}_{args.dataset}_100k.json"
+    #     main(args)
