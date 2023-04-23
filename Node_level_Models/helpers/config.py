@@ -3,7 +3,7 @@ import argparse
 def args_parser():
     parser = argparse.ArgumentParser(description='Insert Arguments')
     parser.add_argument("--seed", type=int, default=10, help="seed")
-    parser.add_argument("--num_clients", type=int, default=5, help="number of clients")
+    parser.add_argument("--num_workers", type=int, default=5, help="number of clients")
     parser.add_argument("--num_sample_submodels", type=int, default=5,
                         help="num of clients randomly selected to participate in Federated Learning")
     parser.add_argument("--hidden_channels", type=int, default=32, help="size of GNN hidden layer")
@@ -69,7 +69,7 @@ def args_parser():
     parser.add_argument('--degree', type=int, default=3,
                         help='The degree of trigger type')
     # federated setting
-    parser.add_argument('--num_malicious', type=int, default=1,
+    parser.add_argument('--num_mali', type=int, default=1,
                         help="number of malicious attacker")
     parser.add_argument('--overlapping_rate', type=float, default=0.0, choices=[0.1,0.2,0.3,0.4],
                         help="Additional samples of overlapping data")

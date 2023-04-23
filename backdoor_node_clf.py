@@ -1,20 +1,16 @@
 import torch
-import matplotlib.pyplot as plt
-import argparse
-from torch_geometric.datasets import Planetoid
+
 from torch_geometric.datasets import Planetoid,Reddit2,Flickr,PPI,Reddit,Yelp
 import torch_geometric.transforms as T
 import numpy as np
 import os
 import time
 import Node_level_Models.helpers.selection_utils  as hs
-#Run Federated Experiment
-#from model import GCN, SAGE
-#from federated_node_classification import run_federated_node_classification
+
 from Node_level_Models.helpers.func_utils import subgraph,get_split
 from torch_geometric.utils import to_undirected
 #Split Graph and creating client datasets
-from helpers.split_graph_utils import split_communities,split_Random, split_Louvain,turn_to_pyg_data,train_test_split
+from helpers.split_graph_utils import split_Random, split_Louvain
 from Node_level_Models.models.construct import model_construct
 from Node_level_Models.helpers.func_utils import prune_unrelated_edge,prune_unrelated_edge_isolated
 import  random
@@ -26,16 +22,6 @@ def main(args, logger):
 
 
     ##### DATA PREPARATION #####
-    #Import and Examine Dataset
-    # if args.dataset.lower() == 'pubmed':
-    #     dataset = Planetoid(root='./data', name='PubMed', transform=T.LargestConnectedComponents())
-    # elif args.dataset.lower() == 'cora':
-    #     dataset = Planetoid(root='./data', name='Cora', transform=T.LargestConnectedComponents())
-    # elif args.dataset.lower() == 'citeseer':
-    #     dataset = Planetoid(root='./data', name='CiteSeer',transform=T.LargestConnectedComponents())
-    # else:
-    #     print("No such dataset!")
-    #     exit()
 
     if (args.dataset == 'Cora' or args.dataset == 'Citeseer' or args.dataset == 'Pubmed'):
         dataset = Planetoid(root='./data/', \
@@ -100,7 +86,7 @@ def main(args, logger):
 
     print("client_graphs",client_data)
 
-    for i in range(args.num_clients):
+    for i in range(args.num_workers):
         print(len(client_data[i]))
 
 
@@ -108,7 +94,7 @@ def main(args, logger):
 
     #client_data = turn_to_pyg_data(client_graphs)
 
-    for i in range(args.num_clients):
+    for i in range(args.num_workers):
         print("Client:{}".format(i))
         print(client_data[i])
         # Gather some statistics about the graph.
@@ -153,7 +139,7 @@ def main(args, logger):
     # prepare for malicious attacker
     Backdoor_model_list = []
     heuristic_trigger_list = ["renyi","ws", "ba", "rr", "gta"]
-    for i in range(args.num_malicious):
+    for i in range(args.num_mali):
         if args.trigger_type== "gta":
            from Node_level_Models.models.GTA import Backdoor
            Backdoor_model = Backdoor(args, device)
@@ -171,7 +157,7 @@ def main(args, logger):
     #size = args.vs_size
 
     client_idx_attach = []
-    for i in range(args.num_clients):
+    for i in range(args.num_workers):
         size =  int((len(client_unlabeled_idx[i]))*args.poisoning_intensity)
         if (args.trigger_position == 'random'):
             idx_attach = hs.obtain_attach_nodes(args, client_unlabeled_idx[i], size)
@@ -191,7 +177,7 @@ def main(args, logger):
 
     # construct the triggers
     client_poison_x, client_poison_edge_index, client_poison_edge_weights, client_poison_labels = [], [], [], []
-    for i in range(args.num_malicious):
+    for i in range(args.num_mali):
         backdoor_model = Backdoor_model_list[i]
         backdoor_model.fit(client_data[i].x,client_train_edge_index[i], None, client_data[i].y, client_idx_train[i], client_idx_attach[i], client_unlabeled_idx[i])
         poison_x, poison_edge_index, poison_edge_weights, poison_labels = backdoor_model.get_poisoned()
@@ -203,7 +189,7 @@ def main(args, logger):
 
     # data level defense
     client_bkd_tn_nodes = []
-    for i in range(args.num_malicious):
+    for i in range(args.num_mali):
         if (args.defense_mode == 'prune'):
             poison_edge_index, poison_edge_weights = prune_unrelated_edge(args, client_poison_edge_index[i], client_poison_edge_weights[i],
                                                                           client_poison_x[i], device, large_graph=False)
@@ -230,7 +216,7 @@ def main(args, logger):
 
     # Initialize clients
     model_list = []
-    for i in range(args.num_clients):
+    for i in range(args.num_workers):
         test_model = model_construct(args, args.test_model, data, device).to(device)
         model_list.append(test_model)
 
@@ -240,7 +226,7 @@ def main(args, logger):
     random.seed(args.seed)
     #rs = random.sample(range(0,args.num_clients),args.num_malicious)
 
-    rs = [i for i in range(args.num_malicious)]
+    rs = [i for i in range(args.num_mali)]
     #print("+++++++++++++ Federated Node Classification +++++++++++++")
     #args.federated_rounds = epoch, the inner iteration normly is set to 1.
     print("rs",rs)
@@ -251,11 +237,11 @@ def main(args, logger):
 
         # worker results
         worker_results = {}
-        for i in range(args.num_clients):
+        for i in range(args.num_workers):
             worker_results[f"client_{i}"] = {"train_loss": None, "train_acc": None, "val_loss": None, "val_acc": None}
 
         if epoch >= args.epoch_backdoor:
-            for j in range(args.num_clients):
+            for j in range(args.num_workers):
                 if j in rs:
                     loss_train, loss_val, acc_train, acc_val = model_list[j].fit(client_poison_x[j].to(device),
                                                                                  client_poison_edge_index[j].to(device),
@@ -307,7 +293,7 @@ def main(args, logger):
             # wandb logger
             logger.log(worker_results)
         else:
-            for j in range(args.num_clients):
+            for j in range(args.num_workers):
                 loss_train, loss_val, acc_train, acc_val = model_list[j].fit(client_data[j].x.to(device),
                                                                              client_data[j].edge_index.to(device),
                                                                              client_data[j].edge_weight.to(device),
@@ -356,7 +342,7 @@ def main(args, logger):
     overall_performance = []
     overall_malicious_train_attach_rate = []
     overall_malicious_train_flip_asr = []
-    for i in range(args.num_clients):
+    for i in range(args.num_workers):
         if i in rs:
 
             induct_x, induct_edge_index, induct_edge_weights = Backdoor_model_list[i].inject_trigger(client_idx_atk[i], client_poison_x[i], client_induct_edge_index[i],
@@ -388,30 +374,30 @@ def main(args, logger):
 
 
     transfer_attack_success_rate_list = []
-    if args.num_clients-args.num_malicious <= 0:
+    if args.num_workers-args.num_mali <= 0:
         average_transfer_attack_success_rate = -10000.0
     else:
-        for i in range(args.num_malicious):
-            for j in range(args.num_clients - args.num_malicious):
+        for i in range(args.num_mali):
+            for j in range(args.num_workers - args.num_mali):
                 induct_x, induct_edge_index, induct_edge_weights = Backdoor_model_list[i].inject_trigger(
                     client_idx_atk[i], client_poison_x[i], client_induct_edge_index[i],
                     client_induct_edge_weights[i], device)
 
-                output = model_list[args.num_malicious+j](induct_x, induct_edge_index, induct_edge_weights)
+                output = model_list[args.num_mali+j](induct_x, induct_edge_index, induct_edge_weights)
                 train_attach_rate = (output.argmax(dim=1)[idx_atk] == args.target_class).float().mean()
                 # print("ASR: {:.4f}".format(train_attach_rate))
                 # overall_malicious_train_attach_rate.append(train_attach_rate.cpu().numpy())
 
-                print('Clean client %d with  trigger %d: %.3f' % (args.num_malicious+j, i, train_attach_rate))
+                print('Clean client %d with  trigger %d: %.3f' % (args.num_mali+j, i, train_attach_rate))
                 transfer_attack_success_rate_list.append(train_attach_rate.cpu().numpy())
         average_transfer_attack_success_rate = np.mean(np.array(transfer_attack_success_rate_list))
     print("Malicious client: {}".format(rs))
-    print("Average ASR: {:.4f}".format(np.array(overall_malicious_train_attach_rate).sum() / args.num_malicious))
-    print("Flip ASR: {:.4f}".format(np.array(overall_malicious_train_flip_asr).sum()/ args.num_malicious))
-    print("Average Performance on clean test set: {:.4f}".format(np.array(overall_performance).sum() / args.num_clients))
-    average_overall_performance =  np.array(overall_performance).sum() / args.num_clients
-    average_ASR = np.array(overall_malicious_train_attach_rate).sum() / args.num_malicious
-    average_Flip_ASR = np.array(overall_performance).sum() / args.num_clients
+    print("Average ASR: {:.4f}".format(np.array(overall_malicious_train_attach_rate).sum() / args.num_mali))
+    print("Flip ASR: {:.4f}".format(np.array(overall_malicious_train_flip_asr).sum()/ args.num_mali))
+    print("Average Performance on clean test set: {:.4f}".format(np.array(overall_performance).sum() / args.num_workers))
+    average_overall_performance =  np.array(overall_performance).sum() / args.num_workers
+    average_ASR = np.array(overall_malicious_train_attach_rate).sum() / args.num_mali
+    average_Flip_ASR = np.array(overall_performance).sum() / args.num_workers
     return average_overall_performance, average_ASR, average_Flip_ASR, average_transfer_attack_success_rate
 
 if __name__ == '__main__':
