@@ -138,13 +138,13 @@ def main(args, logger):
 
     # prepare for malicious attacker
     Backdoor_model_list = []
-    heuristic_trigger_list = ["renyi","ws", "ba", "rr", "gta"]
+    heuristic_trigger_list = ["renyi","ws", "ba"]
     for i in range(args.num_mali):
         if args.trigger_type== "gta":
            from Node_level_Models.models.GTA import Backdoor
            Backdoor_model = Backdoor(args, device)
-        elif args.trigger_type == "adaptive":
-            from Node_level_Models.models.GTA import Backdoor
+        elif args.trigger_type == "ugba":
+            from Node_level_Models.models.backdoor import Backdoor
             Backdoor_model = Backdoor(args, device)
         elif args.trigger_type in heuristic_trigger_list:
             from Node_level_Models.models.Heuristic import Backdoor

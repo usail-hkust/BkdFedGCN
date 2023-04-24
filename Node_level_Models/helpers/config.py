@@ -64,7 +64,7 @@ def args_parser():
                         choices=['overall', '1by1'],
                         help='Model used to attack')
     parser.add_argument('--trigger_type', type=str, default='renyi',
-                        choices=["renyi","ws", "ba", "gta","adaptive"],
+                        choices=["renyi","ws", "ba", "gta","ugba"],
                         help='Generate the trigger methods')
     parser.add_argument('--degree', type=int, default=3,
                         help='The degree of trigger type')

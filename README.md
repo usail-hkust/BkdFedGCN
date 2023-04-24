@@ -45,7 +45,7 @@ We consider the most widely studied setting:
 
 ## Dataset
 We consider the most widely studied datasets:
-- **Node level:**
+- **Node level:** `Cora`, `Citeseer`, `Pubmed`,`Flickr`, `Reddit`, `Reddit2`, `Yelp` 
 - **Graph level:** Molecules: `AIDS`,`NCI1` Bioinformatics: `PROTEINS_full`,`DD`, `ENZYMES` Computer Vision: `Letter-high`, `Letter-med`,`Letter-low` Synthetic: `TRIANGLES`, `COLORS-3`
 
 
@@ -169,38 +169,37 @@ python TO DO
 
 |        | Component            | Paramater                                                                             | Control                 | Default Value | Choice                           |
 |--------|----------------------|---------------------------------------------------------------------------------------|-------------------------|---------------|----------------------------------|
-| Server |  IID & Non-IID       | Independent and identically distributed & Non Independent and identically distributed | `--is_iid`              | `"iid"`       | `"iid"`, `"non-iid"`             |
+| Server |  IID & Non-IID       | Independent and identically distributed & Non Independent and identically distributed | `--is_iid`              | `iid`       | `iid`, `non-iid-louvain`             |
 |        | Number of Workers    | The number of normal worker                                                           | `--num_workers`         | `5`           | `5`                              |
 |        | Number of Malicious  | The number of malicious attacker                                                      | `--num_mali`            | `1`           | `1`,`2`,`3`,`4`,`5`              |
-|        | Start Backdoor Time  | The time at which a backdoor is first conducted by an attacker.                       | `--epoch_backdoor`      | `0`           | TODO                             |
-| Client | Trigger Size         | The size of a trigger (the number of trigger's nodes)                                 | `--frac_of_avg`         | `0.1`         | `0.1`,`0.2`,`0.3`,`0.4`,`0.5`    |
-|        | Trigger Type         | The specific type of trigger type                                                     | `--trigger_type`        | `"reny"`      | `"reny"`,`"ws"`, `"ba"`, `"rr"`  |
-|        | Trigger Position     | Locations in a graph (subgraph) where a trigger  is inserted                          | `--trigger_position`    | `"random"`    | `"random"`                       |
+|        | Start Backdoor Time  | The time at which a backdoor is first conducted by an attacker.                       | `--epoch_backdoor`      | `0`           | `0`,`0.1`,`0.2`,`0.3`,`0.4`，`0.5` |
+|        | Cross Nodes  | overlapping_rate.                       | `--epoch_backdoor`      | `0`           | `0`,`0.1`,`0.2`,`0.3`,`0.4`，`0.5` |
+| Client | Trigger Size         | The size of a trigger (the number of trigger's nodes)                                 | `--trigger_size`         | `3`         | `3`,`4`,`5`,`6`,`7`,`8`,`9`,`10`    |
+|        | Trigger Type         | The specific type of trigger type                                                     | `--trigger_type`        | `renyi`      | `renyi`,`ws`, `ba`,`gta`,`ugba`|
+|        | Trigger Position     | Locations in a graph (subgraph) where a trigger  is inserted                          | `--trigger_position`    | `random`    | `random` ,`cluster`,`cluster_degree`            |
 |        | Poisoning Rate       | Percentage of training data that has been  poisoned                                   | `--poisoning_intensity` | `0.1`         | `0.1`, `0.2`, `0.3`, `0.4`,`0.5` |
 
 
 - **Model**: `GCN`, `GAT`, `GraphSAGE`
-- **Dataset**: `NCI1`, `PROTEINS_full`, `TRIANGLES`
+- **Dataset**: `Cora`, `Citeseer`, `Pubmed`,`Flickr`, `Reddit`, `Reddit2`, `Yelp` 
 - **Optimizer**: Adam with default hyperparameters
-- **Total epoch**: `1000`
-- **Batch size**: `128`
-- **Learning rate**: `7e-4`
+- **Total epoch**: `200`
+- **Learning rate**: `0.01`
 
  
 running command for training:
 ```python
-python run_graph_exps.py --dataset NCI1 \
-                         --config ./Graph_level_Models/configs/TUS/TUs_graph_classification_GCN_NCI1_100k.json \
+python run_node_exps.py  --model GCN\
+                         --dataset Cora\
                          --is_iid iid\
                          --num_workers 5\
                          --num_mali 1\
                          --epoch_backdoor 0\
-                         --frac_of_avg 0.1\
+                         --trigger_size 3\
                          --trigger_type renyi\
                          --trigger_position random\
                          --poisoning_intensity 0.1\
-                         --filename ./Checkpoints/Graph \
-                         --device_id 0
+                         --overlapping_rate 0.0
 ```
 
 > Each experiment was repeated 5 times with a different seed each time
