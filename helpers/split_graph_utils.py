@@ -37,7 +37,7 @@ def split_Random(args,data):
     args.drop_edge = 0
     ovlap = args.overlapping_rate
     drop_edge = args.drop_edge
-    client_num = args.num_clients
+    client_num = args.num_workers
 
     sampling_rate = (np.ones(client_num) -
                           ovlap) / client_num
@@ -106,7 +106,7 @@ def split_Louvain(args,data):
     args.delta = 40
 
     delta= args.delta
-    client_num = args.num_clients
+    client_num = args.num_workers
     data.index_orig = torch.arange(data.num_nodes)
     G = to_networkx(
         data,

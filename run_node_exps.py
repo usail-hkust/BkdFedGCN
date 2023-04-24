@@ -16,17 +16,18 @@ proj_name = project_name[0]
 def main(args):
     model_name = args.model
     # 'data-{}_model-{}_IID-{}_num_workers-{}_num_mali-{}_epoch_backdoor-{}_frac_of_avg-{}_trigger_type-{}_trigger_position-{}_poisoning_intensity-{}'
-    file_name = 'D-{}_M-{}_IID-{}_NW-{}_NM-{}_EB-{}_TS-{}_TPye-{}_TPo-{}_PI-{}'.format(
+    file_name = 'D-{}_M-{}_IID-{}_NW-{}_NM-{}_EB-{}_TS-{}_TPye-{}_TPo-{}_PI-{}_OR-{}'.format(
         args.dataset,
         model_name,
         args.is_iid,
-        args.num_clients,
-        args.num_malicious ,
+        args.num_workers,
+        args.num_mali,
         args.epoch_backdoor,
         args.trigger_size,
         args.trigger_type,
         args.trigger_position,
-        args.poisoning_intensity)
+        args.poisoning_intensity,
+        args.overlapping_rate)
 
     average_overall_performance_list, average_ASR_list, average_Flip_ASR_list, average_transfer_attack_success_rate_list = [], [], [], []
     results_table = []
