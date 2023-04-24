@@ -40,13 +40,10 @@ We consider the most widely studied setting:
 - **The adversary has access to a subset of clients and can inject poisoned local datasets on these clients**.
 
 
-
-
-
 ## Dataset
 We consider the most widely studied datasets:
 - **Node level:** `Cora`, `Citeseer`, `Pubmed`,`Flickr`, `Reddit`, `Reddit2`, `Yelp` 
-- **Graph level:** Molecules: `AIDS`,`NCI1` Bioinformatics: `PROTEINS_full`,`DD`, `ENZYMES` Computer Vision: `Letter-high`, `Letter-med`,`Letter-low` Synthetic: `TRIANGLES`, `COLORS-3`
+- **Graph level:** Molecules: `AIDS`,`NCI1` Bioinformatics: `PROTEINS_full`,`DD`, `ENZYMES`  Synthetic: `TRIANGLES`, `COLORS-3`
 
 
 ## GCN Model
