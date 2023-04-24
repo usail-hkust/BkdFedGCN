@@ -127,16 +127,9 @@ def transform_dataset(trainset, testset, avg_nodes, args):
     print("Start generating trigger by {}".format(args.trigger_type))
 
     if args.trigger_type == "renyi":
-        edge_list = []
-        edge_list.append([0, 0])
+
         G_trigger = nx.erdos_renyi_graph(num_trigger_nodes, args.density, directed=False)
-        # Convert the graph to an edge list in COO format
-        edge_list = np.array(list(G_trigger.edges())).T
-        # Insert [0, 0] at the beginning of the edge list
-        edge_list = np.insert(edge_list, 0, [0, 0], axis=1)
-        edge_index = torch.tensor(edge_list, dtype=torch.long)
-        print("edge_index",edge_index)
-        tt
+
     elif args.trigger_type == "ws":
         G_trigger = nx.watts_strogatz_graph(num_trigger_nodes, args.avg_degree, args.density)
     elif args.trigger_type == "ba":
