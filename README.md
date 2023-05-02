@@ -170,7 +170,7 @@ python TO DO
 |        | Number of Workers    | The number of normal worker                                                           | `--num_workers`         | `5`           | `5`                              |
 |        | Number of Malicious  | The number of malicious attacker                                                      | `--num_mali`            | `1`           | `1`,`2`,`3`,`4`,`5`              |
 |        | Start Backdoor Time  | The time at which a backdoor is first conducted by an attacker.                       | `--epoch_backdoor`      | `0`           | `0`,`0.1`,`0.2`,`0.3`,`0.4`，`0.5` |
-|        | Cross Nodes  | overlapping_rate.                       | `--epoch_backdoor`      | `0`           | `0`,`0.1`,`0.2`,`0.3`,`0.4`，`0.5` |
+|        | Cross Nodes  | the proportion of data that overlaps between adjacent subsets when splitting a dataset into client_num subsets for federated learningzsa                       | `--overlapping_rate`      | `0`           | `0`,`0.1`,`0.2`,`0.3`,`0.4`，`0.5` |
 | Client | Trigger Size         | The size of a trigger (the number of trigger's nodes)                                 | `--trigger_size`         | `3`         | `3`,`4`,`5`,`6`,`7`,`8`,`9`,`10`    |
 |        | Trigger Type         | The specific type of trigger type                                                     | `--trigger_type`        | `renyi`      | `renyi`,`ws`, `ba`,`gta`,`ugba`|
 |        | Trigger Position     | Locations in a graph (subgraph) where a trigger  is inserted                          | `--trigger_position`    | `random`    | `random` ,`cluster`,`cluster_degree`            |

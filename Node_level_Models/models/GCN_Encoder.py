@@ -77,7 +77,7 @@ class GCN_Encoder(nn.Module):
             whether to show verbose logs
         """
 
-        self.edge_index, self.edge_weight = edge_index, edge_weight
+        self.edge_index, self.edge_weight = edge_index.to(self.device), edge_weight
         self.features = features.to(self.device)
         self.labels = labels.to(self.device)
 
