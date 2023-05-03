@@ -5,7 +5,7 @@ import numpy as np
 from sklearn.metrics import f1_score, precision_score, recall_score
 import community as community_louvain
 import random
-
+from tqdm import tqdm
 
 
 def split_communities(data, clients):
@@ -42,15 +42,17 @@ def split_Random(args,data):
                           ovlap) / client_num
 
     data.index_orig = torch.arange(data.num_nodes)
+    print("Graph to Networkx")
     G = to_networkx(
         data,
         node_attrs=['x', 'y', 'train_mask', 'val_mask', 'test_mask'],
         to_undirected=True)
+    print("Setting node attributes")
     nx.set_node_attributes(G,
                            dict([(nid, nid)
                                  for nid in range(nx.number_of_nodes(G))]),
                            name="index_orig")
-
+    print("Calculating  partition")
     client_node_idx = {idx: [] for idx in range(client_num)}
     indices = np.random.permutation(data.num_nodes)
     sum_rate = 0
@@ -107,14 +109,35 @@ def split_Louvain(args,data):
     delta= args.delta
     client_num = args.num_workers
     data.index_orig = torch.arange(data.num_nodes)
-    G = to_networkx(
-        data,
-        node_attrs=['x', 'y', 'train_mask', 'val_mask', 'test_mask'],
-        to_undirected=True)
+    print("Graph to Networkx")
+    # G = to_networkx(
+    #     data,
+    #     node_attrs=['x', 'y', 'train_mask', 'val_mask', 'test_mask'],
+    #     to_undirected=True)
+
+    node_attrs = ['x', 'y', 'train_mask', 'val_mask', 'test_mask']
+
+
+    G = to_networkx(data, node_attrs=node_attrs, to_undirected=True)
+    #partition = community_louvain.best_partition(G)
+    Large_data_list = ['Reddit','Reddit2','Yelp','Flickr']
+    if args.dataset in Large_data_list:
+        total = 1800
+    else:
+        total = 100
+    print("Setting node attributes")
     nx.set_node_attributes(G,
                            dict([(nid, nid)
-                                 for nid in range(nx.number_of_nodes(G))]),
+                                 for nid in tqdm(range(nx.number_of_nodes(G)))]),
                            name="index_orig")
+
+
+
+
+    # with tqdm(desc="Calculating community partition", total= total) as pbar:
+    #     partition = community_louvain.best_partition(G)
+    #     pbar.update(1)
+    print("Calculating community partition")
     partition = community_louvain.best_partition(G)
 
     cluster2node = {}

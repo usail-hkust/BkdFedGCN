@@ -78,13 +78,6 @@ def main(args, logger):
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     torch.cuda.set_device(args.device_id)
-    #Split Graph and creating client datasets
-
-    #client_data = split_communities(data, args.clients)
-    #client_data = split_Random(args,data)
-
-
-    print("client_graphs",client_data)
 
     for i in range(args.num_workers):
         print(len(client_data[i]))
