@@ -60,15 +60,15 @@ def main(args, logger):
     print(f'Number of classes: {dataset.num_classes}')
 
     data = dataset[0]  # Get the graph object.
-    print("data.y",data.y)
+
     args.avg_degree = data.num_edges / data.num_nodes
-    print(data)
+
     print('==============================================================')
 
     # Gather some statistics about the graph.
     print(f'Number of nodes: {data.num_nodes}')
     print(f'Number of edges: {data.num_edges}')
-
+    print('======================Start Splitting the Data========================================')
     if args.is_iid == "iid":
         client_data = split_Random(args, data)
     elif args.is_iid == "non-iid-louvain":
@@ -93,7 +93,7 @@ def main(args, logger):
     #Create data objects for the new component-graphs
 
     #client_data = turn_to_pyg_data(client_graphs)
-
+    print('======================Start Preparing the Data========================================')
     for i in range(args.num_workers):
         print("Client:{}".format(i))
         print(client_data[i])
@@ -133,9 +133,7 @@ def main(args, logger):
         client_unlabeled_idx.append(unlabeled_idx)
     #### END OF DATA PREPARATION #####
 
-
-
-
+    print('======================Start Preparing the Backdoor Attack========================================')
     # prepare for malicious attacker
     Backdoor_model_list = []
     heuristic_trigger_list = ["renyi","ws", "ba"]
@@ -153,9 +151,8 @@ def main(args, logger):
             raise NameError
         Backdoor_model_list.append(Backdoor_model)
 
-    # prepare for backdoor injected node index
-    #size = args.vs_size
 
+    print('======================Start Preparing the Trigger Posistion========================================')
     client_idx_attach = []
     for i in range(args.num_workers):
         size =  int((len(client_unlabeled_idx[i]))*args.poisoning_intensity)

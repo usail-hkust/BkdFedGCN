@@ -6,7 +6,6 @@ from sklearn.metrics import f1_score, precision_score, recall_score
 import community as community_louvain
 import random
 
-torch.manual_seed(12345)
 
 
 def split_communities(data, clients):
