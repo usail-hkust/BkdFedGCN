@@ -120,11 +120,8 @@ def split_Louvain(args,data):
 
     G = to_networkx(data, node_attrs=node_attrs, to_undirected=True)
     #partition = community_louvain.best_partition(G)
-    Large_data_list = ['Reddit','Reddit2','Yelp','Flickr']
-    if args.dataset in Large_data_list:
-        total = 1800
-    else:
-        total = 100
+    #Large_data_list = ['Reddit','Reddit2','Yelp','Flickr']
+    Large_data_list = ['Reddit']
     print("Setting node attributes")
     nx.set_node_attributes(G,
                            dict([(nid, nid)
@@ -138,7 +135,11 @@ def split_Louvain(args,data):
     #     partition = community_louvain.best_partition(G)
     #     pbar.update(1)
     print("Calculating community partition")
-    partition = community_louvain.best_partition(G)
+    if args.dataset in Large_data_list:
+        partition = community_louvain.best_partition(G,resolution = 0.1)
+    else:
+        partition = community_louvain.best_partition(G)
+
 
     cluster2node = {}
     for node in partition:

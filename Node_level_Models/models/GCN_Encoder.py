@@ -145,8 +145,13 @@ class GCN_Encoder(nn.Module):
         idx_test :
             node testing indices
         """
+
+
         self.eval()
         with torch.no_grad():
+            edge_index, edge_weight = edge_index.to(self.device), edge_weight
+            features = features.to(self.device)
+            labels = labels.to(self.device)
             output = self.forward(features, edge_index, edge_weight)
             acc_test = accuracy(output[idx_test], labels[idx_test])
         # print("Test set results:",
@@ -180,6 +185,11 @@ class GCN_body(nn.Module):
         self.layer_norm_first = layer_norm_first
         self.use_ln = use_ln
     def forward(self,x, edge_index,edge_weight=None):
+        edge_index, edge_weight = edge_index.to(self.device), edge_weight
+        x = x.to(self.device)
+
+
+
         if(self.layer_norm_first):
             x = self.lns[0](x)
         i=0

@@ -412,9 +412,10 @@ def cluster_degree_selection(args, data, idx_train, idx_val, idx_clean_test, unl
     encoder_clean_test_ca = gcn_encoder.test(data.x, data.edge_index, None, data.y, idx_clean_test)
     print("Encoder CA on clean test nodes: {:.4f}".format(encoder_clean_test_ca))
     # from sklearn import cluster
+    idx_train, unlabeled_idx = idx_train.to(device), unlabeled_idx.to(device)
     seen_node_idx = torch.concat([idx_train, unlabeled_idx])
     nclass = np.unique(data.y.cpu().numpy()).shape[0]
-    encoder_x = gcn_encoder.get_h(data.x, train_edge_index, None).clone().detach()
+    encoder_x = gcn_encoder.get_h(data.x.to(device), train_edge_index.to(device), None).clone().detach()
     if (args.dataset == 'Cora' or args.dataset == 'Citeseer'):
         kmedoids = cluster.KMedoids(n_clusters=nclass, method='pam')
         kmedoids.fit(encoder_x[seen_node_idx].detach().cpu().numpy())
@@ -430,7 +431,7 @@ def cluster_degree_selection(args, data, idx_train, idx_val, idx_clean_test, unl
     # kmedoids.fit(encoder_x[seen_node_idx].detach().cpu().numpy())
     # cluster_centers = kmedoids.cluster_centers_
 
-    encoder_output = gcn_encoder(data.x, train_edge_index, None)
+    encoder_output = gcn_encoder(data.x.to(device), train_edge_index.to(device), None)
     # y_pred = np.array(encoder_output.argmax(dim=1).cpu()).astype(int)
     # cluster_centers = []
     # for label in range(nclass):
