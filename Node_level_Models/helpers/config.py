@@ -54,8 +54,8 @@ def args_parser():
     parser.add_argument('--dis_weight', type=float, default=1,
                         help="Weight of cluster distance")
     parser.add_argument('--trigger_position', type=str, default='random',
-                        choices=[ 'cluster', 'random', 'cluster_degree'],
-                        help='Method to select idx_attach for training trojan model (none means randomly select)')
+                        choices=[ 'learn_cluster', 'random', 'learn_cluster_degree',"degree","cluster"],
+                        help='Method to select idx_attach for training trojan model')
     parser.add_argument('--test_model', type=str, default='GCN',
                         choices=['GCN', 'GAT', 'GraphSage', 'GIN'],
                         help='Model used to attack')

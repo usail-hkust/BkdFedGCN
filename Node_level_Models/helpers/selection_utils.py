@@ -9,7 +9,8 @@ import os
 import time
 from sklearn_extra import cluster
 from sklearn.cluster import KMeans
-
+import networkx as nx
+import dgl
 def max_norm(data):
     _range = np.max(data) - np.min(data)
     return (data - np.min(data)) / _range
@@ -22,6 +23,48 @@ def obtain_attach_nodes(args, node_idxs, size):
     choice = np.arange(len(node_idxs))
     rs.shuffle(choice)
     return node_idxs[choice[:size]]
+
+def obtain_attach_nodes_degree(args, node_idxs, client_data,size):
+    # Calculate the degree of each node
+    deg = torch.zeros(client_data.num_nodes, dtype=torch.long)
+    deg.index_add_(0, client_data.edge_index[0], torch.ones_like(client_data.edge_index[1]))
+    deg.index_add_(0, client_data.edge_index[1], torch.ones_like(client_data.edge_index[0]))
+
+    # Create a dictionary where keys are node indices and values are degrees
+    degree_dict = dict(enumerate(deg.tolist()))
+
+    # Sort the nodes by their degree in descending order
+    sorted_nodes = sorted(degree_dict, key=degree_dict.get, reverse=True)
+
+    # Create a list of indices of nodes in node_idxs that correspond to their positions in the sorted_nodes list
+    node_idxs_sorted_indices = [sorted_nodes.index(node_idx) for node_idx in node_idxs]
+
+    # Sort the node_idxs list based on the indices obtained above
+    sorted_node_idxs = [node_idxs[index] for index in
+                        sorted(range(len(node_idxs_sorted_indices)), key=node_idxs_sorted_indices.__getitem__)]
+
+    return sorted_node_idxs[:size]
+
+def obtain_attach_nodes_cluster(args, node_idxs, client_data, size):
+
+    # create a DGL graph from edge_index
+    g = dgl.graph((client_data.edge_index[0], client_data.edge_index[1]), num_nodes=client_data.num_nodes)
+
+    # convert DGL graph to NetworkX graph
+    g = dgl.to_networkx(g.cpu())
+    #  sort according to cluster
+    simple_g = nx.Graph(g)
+    clustering_dict = nx.clustering(simple_g, weight='weight')
+    sorted_nodes = sorted(clustering_dict, key=clustering_dict.get, reverse=True)
+
+    # Create a list of indices of nodes in node_idxs that correspond to their positions in the sorted_nodes list
+    node_idxs_sorted_indices = [sorted_nodes.index(node_idx) for node_idx in node_idxs]
+
+    # Sort the node_idxs list based on the indices obtained above
+    sorted_node_idxs = [node_idxs[index] for index in
+                        sorted(range(len(node_idxs_sorted_indices)), key=node_idxs_sorted_indices.__getitem__)]
+
+    return sorted_node_idxs[:size]
 
 
 def obtain_attach_nodes_by_influential(args, model, node_idxs, x, edge_index, edge_weights, labels, device, size,
@@ -149,8 +192,8 @@ def obtain_attach_nodes_by_cluster(args, y_pred, model, node_idxs, x, labels, de
             continue
         single_labels_nodes = labels_dict[label]  # the node idx of the nodes in single class
         single_labels_nodes = np.array(list(set(single_labels_nodes)))
-
-        single_labels_nodes_dis = distances[single_labels_nodes]
+        print("single_labels_nodes",single_labels_nodes)
+        single_labels_nodes_dis = distances[int(single_labels_nodes)]
         single_labels_nodes_dis = max_norm(single_labels_nodes_dis)
         single_labels_nodes_dis_tar = distances_tar[single_labels_nodes]
         single_labels_nodes_dis_tar = max_norm(single_labels_nodes_dis_tar)
@@ -388,10 +431,10 @@ def cluster_distance_selection(args, data, idx_train, idx_val, idx_clean_test, u
     encoder_clean_test_ca = gcn_encoder.test(data.x, data.edge_index, None, data.y, idx_clean_test)
     print("Encoder CA on clean test nodes: {:.4f}".format(encoder_clean_test_ca))
     # from sklearn import cluster
-    seen_node_idx = torch.concat([idx_train, unlabeled_idx])
+    seen_node_idx = torch.concat([idx_train.to(device), unlabeled_idx.to(device)])
     nclass = np.unique(data.y.cpu().numpy()).shape[0]
-    encoder_x = gcn_encoder.get_h(data.x, train_edge_index, None).clone().detach()
-    encoder_output = gcn_encoder(data.x, train_edge_index, None)
+    encoder_x = gcn_encoder.get_h(data.x.to(device), train_edge_index.to(device), None).clone().detach()
+    encoder_output = gcn_encoder(data.x.to(device), train_edge_index.to(device), None)
     y_pred = np.array(encoder_output.argmax(dim=1).cpu()).astype(int)
     gcn_encoder = gcn_encoder.cpu()
     kmedoids = cluster.KMedoids(n_clusters=nclass, method='pam')

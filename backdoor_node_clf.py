@@ -152,13 +152,19 @@ def main(args, logger):
         if (args.trigger_position == 'random'):
             idx_attach = hs.obtain_attach_nodes(args, client_unlabeled_idx[i], size)
             idx_attach = torch.LongTensor(idx_attach).to(device)
-        elif (args.trigger_position == 'cluster'):
+        elif (args.trigger_position == 'learn_cluster'):
             idx_attach = hs.cluster_distance_selection(args, client_data[i], client_idx_train[i], client_idx_val[i], client_idx_clean_test[i], client_unlabeled_idx[i],
                                                        client_train_edge_index[i], size, device)
             idx_attach = torch.LongTensor(idx_attach).to(device)
-        elif (args.trigger_position == 'cluster_degree'):
+        elif (args.trigger_position == 'learn_cluster_degree'):
             idx_attach = hs.cluster_degree_selection(args, client_data[i], client_idx_train[i], client_idx_val[i], client_idx_clean_test[i], client_unlabeled_idx[i],
                                                        client_train_edge_index[i], size, device)
+            idx_attach = torch.LongTensor(idx_attach).to(device)
+        elif (args.trigger_position == 'degree'):
+            idx_attach = hs.obtain_attach_nodes_degree(args, client_unlabeled_idx[i],client_data[i], size)
+            idx_attach = torch.LongTensor(idx_attach).to(device)
+        elif (args.trigger_position == 'cluster'):
+            idx_attach = hs.obtain_attach_nodes_cluster(args, client_unlabeled_idx[i],client_data[i], size)
             idx_attach = torch.LongTensor(idx_attach).to(device)
         else:
             raise NameError
