@@ -42,6 +42,8 @@ def split_Random(args,data):
                           ovlap) / client_num
 
     data.index_orig = torch.arange(data.num_nodes)
+
+
     print("Graph to Networkx")
     G = to_networkx(
         data,

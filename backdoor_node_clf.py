@@ -14,7 +14,7 @@ from helpers.split_graph_utils import split_Random, split_Louvain
 from Node_level_Models.models.construct import model_construct
 from Node_level_Models.helpers.func_utils import prune_unrelated_edge,prune_unrelated_edge_isolated
 import  random
-
+from Node_level_Models.data.data import  ogba_arxiv_data
 def main(args, logger):
     np.random.seed(args.seed)
     torch.manual_seed(args.seed)
@@ -49,7 +49,6 @@ def main(args, logger):
         from ogb.nodeproppred import PygNodePropPredDataset
         # Download and process data at './dataset/ogbg_molhiv/'
         dataset = PygNodePropPredDataset(name='ogbn-arxiv', root='./data/')
-        split_idx = dataset.get_idx_split()
 
 
 
@@ -59,8 +58,11 @@ def main(args, logger):
     print(f'Number of features: {dataset.num_features}')
     print(f'Number of classes: {dataset.num_classes}')
 
-    data = dataset[0]  # Get the graph object.
 
+    if args.dataset == "ogbn-arxiv":
+        data = ogba_arxiv_data(dataset)
+    else:
+        data = dataset[0]  # Get the graph object.
     args.avg_degree = data.num_edges / data.num_nodes
 
     print('==============================================================')
@@ -170,7 +172,7 @@ def main(args, logger):
             raise NameError
         client_idx_attach.append(idx_attach)
 
-
+    print('======================Start Preparing the Posioned Datasets========================================')
     # construct the triggers
     client_poison_x, client_poison_edge_index, client_poison_edge_weights, client_poison_labels = [], [], [], []
     for i in range(args.num_mali):
@@ -209,7 +211,7 @@ def main(args, logger):
         client_bkd_tn_nodes.append(bkd_tn_nodes)
 
     optimizer_list = []
-
+    print('======================Start Preparing the Models========================================')
     # Initialize clients
     model_list = []
     for i in range(args.num_workers):
@@ -227,6 +229,7 @@ def main(args, logger):
     #args.federated_rounds = epoch, the inner iteration normly is set to 1.
     print("rs",rs)
     args.epoch_backdoor = int(args.epoch_backdoor * args.epochs)
+    print('======================Start Training Model========================================')
     for epoch in range(args.epochs):
         client_induct_edge_index = []
         client_induct_edge_weights = []

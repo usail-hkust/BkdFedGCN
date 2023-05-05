@@ -24,6 +24,10 @@ def obtain_attach_nodes(args, node_idxs, size):
     rs.shuffle(choice)
     return node_idxs[choice[:size]]
 
+def sort_subset(sorted_nodes, node_idxs):
+    node_idx_dict = {node_idx: i for i, node_idx in enumerate(sorted_nodes)}
+    sorted_node_idxs = sorted(node_idxs.numpy(), key=lambda x: node_idx_dict[x])
+    return sorted_node_idxs
 def obtain_attach_nodes_degree(args, node_idxs, client_data,size):
     # Calculate the degree of each node
     deg = torch.zeros(client_data.num_nodes, dtype=torch.long)
@@ -36,12 +40,14 @@ def obtain_attach_nodes_degree(args, node_idxs, client_data,size):
     # Sort the nodes by their degree in descending order
     sorted_nodes = sorted(degree_dict, key=degree_dict.get, reverse=True)
 
-    # Create a list of indices of nodes in node_idxs that correspond to their positions in the sorted_nodes list
-    node_idxs_sorted_indices = [sorted_nodes.index(node_idx) for node_idx in node_idxs]
+    # # Create a list of indices of nodes in node_idxs that correspond to their positions in the sorted_nodes list
+    # node_idxs_sorted_indices = [sorted_nodes.index(node_idx) for node_idx in node_idxs]
+    #
+    # # Sort the node_idxs list based on the indices obtained above
+    # sorted_node_idxs = [node_idxs[index] for index in
+    #                     sorted(range(len(node_idxs_sorted_indices)), key=node_idxs_sorted_indices.__getitem__)]
 
-    # Sort the node_idxs list based on the indices obtained above
-    sorted_node_idxs = [node_idxs[index] for index in
-                        sorted(range(len(node_idxs_sorted_indices)), key=node_idxs_sorted_indices.__getitem__)]
+    sorted_node_idxs = sort_subset(sorted_nodes, node_idxs)
 
     return sorted_node_idxs[:size]
 
@@ -57,12 +63,13 @@ def obtain_attach_nodes_cluster(args, node_idxs, client_data, size):
     clustering_dict = nx.clustering(simple_g, weight='weight')
     sorted_nodes = sorted(clustering_dict, key=clustering_dict.get, reverse=True)
 
-    # Create a list of indices of nodes in node_idxs that correspond to their positions in the sorted_nodes list
-    node_idxs_sorted_indices = [sorted_nodes.index(node_idx) for node_idx in node_idxs]
-
-    # Sort the node_idxs list based on the indices obtained above
-    sorted_node_idxs = [node_idxs[index] for index in
-                        sorted(range(len(node_idxs_sorted_indices)), key=node_idxs_sorted_indices.__getitem__)]
+    # # Create a list of indices of nodes in node_idxs that correspond to their positions in the sorted_nodes list
+    # node_idxs_sorted_indices = [sorted_nodes.index(node_idx) for node_idx in node_idxs]
+    #
+    # # Sort the node_idxs list based on the indices obtained above
+    # sorted_node_idxs = [node_idxs[index] for index in
+    #                     sorted(range(len(node_idxs_sorted_indices)), key=node_idxs_sorted_indices.__getitem__)]
+    sorted_node_idxs = sort_subset(sorted_nodes, node_idxs)
 
     return sorted_node_idxs[:size]
 
