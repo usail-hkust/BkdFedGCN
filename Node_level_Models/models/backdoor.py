@@ -166,13 +166,19 @@ class Backdoor:
 
 
     def fit(self, features, edge_index, edge_weight, labels, idx_train, idx_attach,idx_unlabeled):
-
+        features, edge_index, edge_weight, labels, idx_train, idx_attach, idx_unlabeled= features.to(self.device), \
+                                                                                         edge_index.to(self.device), \
+                                                                                         edge_weight, \
+                                                                                         labels.to(self.device), \
+                                                                                         idx_train.to(self.device), \
+                                                                                         idx_attach.to(self.device),\
+                                                                                         idx_unlabeled.to(self.device)
         args = self.args
         if edge_weight is None:
             edge_weight = torch.ones([edge_index.shape[1]],device=self.device,dtype=torch.float)
-        self.idx_attach = idx_attach
-        self.features = features
-        self.edge_index = edge_index
+        self.idx_attach = idx_attach.to(self.device)
+        self.features = features.to(self.device)
+        self.edge_index = edge_index.to(self.device)
         self.edge_weights = edge_weight
         
         # initial a shadow model
@@ -230,7 +236,7 @@ class Backdoor:
             optimizer_trigger.zero_grad()
 
             rs = np.random.RandomState(self.args.seed)
-            idx_outter = torch.cat([idx_attach,idx_unlabeled[rs.choice(len(idx_unlabeled),size=512,replace=False)]])
+            idx_outter = torch.cat([idx_attach,idx_unlabeled[rs.choice(len(idx_unlabeled),size=512,replace=True)]])
 
             trojan_feat, trojan_weights = self.trojan(features[idx_outter],self.args.thrd) # may revise the process of generate
         
@@ -269,13 +275,12 @@ class Backdoor:
                 self.weights = deepcopy(self.trojan.state_dict())
                 loss_best = float(loss_outter)
 
-            if args.debug and i % 10 == 0:
+            if  i % 10 == 0:
                 print('Epoch {}, loss_inner: {:.5f}, loss_target: {:.5f}, homo loss: {:.5f} '\
                         .format(i, loss_inner, loss_target, loss_homo))
                 print("acc_train_clean: {:.4f}, ASR_train_attach: {:.4f}, ASR_train_outter: {:.4f}"\
                         .format(acc_train_clean,acc_train_attach,acc_train_outter))
-        if args.debug:
-            print("load best weight based on the loss outter")
+
         self.trojan.load_state_dict(self.weights)
         self.trojan.eval()
 

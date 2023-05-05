@@ -289,6 +289,14 @@ def obtain_attach_nodes_by_cluster_degree(args, edge_index, y_pred, cluster_cent
 def obtain_attach_nodes_by_cluster_degree_all(args, edge_index, y_pred, cluster_centers, node_idxs, x, size):
     dis_weight = args.dis_weight
     degrees = (degree(edge_index[0]) + degree(edge_index[1])).cpu().numpy()
+
+    deg = torch.zeros(len(y_pred), dtype=torch.long)
+    deg.index_add_(0, edge_index[0], torch.ones_like(edge_index[1]))
+    deg.index_add_(0, edge_index[1], torch.ones_like(edge_index[0]))
+    degrees = deg
+    print("degree", degrees)
+    print("degree",degrees.shape)
+    print("y_pred",y_pred.shape)
     distances = []
     for id in range(x.shape[0]):
         tmp_center_label = y_pred[id]
@@ -298,7 +306,7 @@ def obtain_attach_nodes_by_cluster_degree_all(args, edge_index, y_pred, cluster_
         distances.append(dis)
 
     distances = np.array(distances)
-    print(y_pred)
+
     # label_list = np.unique(labels.cpu())
     # label_list = np.unique(y_pred)
     # labels_dict = {}
@@ -459,6 +467,8 @@ def cluster_degree_selection(args, data, idx_train, idx_val, idx_clean_test, unl
 
 def obtain_attach_nodes_by_cluster_degree_single(args, edge_index, y_pred, cluster_centers, node_idxs, x, size):
     dis_weight = args.dis_weight
+
+
     degrees = (degree(edge_index[0]) + degree(edge_index[1])).cpu().numpy()
     distances = []
     # for id in range(x.shape[0]):

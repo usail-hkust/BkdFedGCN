@@ -49,8 +49,7 @@ def args_parser():
                         help="Mode of defense")
     parser.add_argument('--prune_thr', type=float, default=0.2,
                         help="Threshold of prunning edges")
-    parser.add_argument('--homo_loss_weight', type=float, default=0,
-                        help="Weight of optimize similarity loss")
+
     # attack setting
     parser.add_argument('--dis_weight', type=float, default=1,
                         help="Weight of cluster distance")
@@ -68,6 +67,12 @@ def args_parser():
                         help='Generate the trigger methods')
     parser.add_argument('--degree', type=int, default=3,
                         help='The degree of trigger type')
+    parser.add_argument('--target_loss_weight', type=float, default=1,
+                        help="Weight of optimize outter trigger generator in ugba")
+    parser.add_argument('--homo_loss_weight', type=float, default=100,
+                        help="Weight of optimize similarity loss in ugba")
+    parser.add_argument('--homo_boost_thrd', type=float, default=0.8,
+                        help="Threshold of increase similarity in ugba")
     # federated setting
     parser.add_argument('--num_mali', type=int, default=1,
                         help="number of malicious attacker")
