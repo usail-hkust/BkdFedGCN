@@ -1,6 +1,8 @@
 import torch
 
 from torch_geometric.datasets import Planetoid,Reddit2,Flickr,PPI,Reddit,Yelp
+from torch_geometric.datasets import IMDB
+from torch_geometric.datasets import Coauthor, Amazon, WikiCS
 import torch_geometric.transforms as T
 import numpy as np
 import os
@@ -14,15 +16,15 @@ from helpers.split_graph_utils import split_Random, split_Louvain
 from Node_level_Models.models.construct import model_construct
 from Node_level_Models.helpers.func_utils import prune_unrelated_edge,prune_unrelated_edge_isolated
 import  random
-from Node_level_Models.data.data import  ogba_arxiv_data
+from Node_level_Models.data.data import  ogba_arxiv_data,Amazon_data,Coauthor_data
 def main(args, logger):
     np.random.seed(args.seed)
     torch.manual_seed(args.seed)
     torch.cuda.manual_seed(args.seed)
 
-
+    Coauthor_list = ["Cs","Physics"]
+    Amazon_list = ["computers","photo"]
     ##### DATA PREPARATION #####
-
     if (args.dataset == 'Cora' or args.dataset == 'Citeseer' or args.dataset == 'Pubmed'):
         dataset = Planetoid(root='./data/', \
                             name=args.dataset, \
@@ -49,7 +51,13 @@ def main(args, logger):
         from ogb.nodeproppred import PygNodePropPredDataset
         # Download and process data at './dataset/ogbg_molhiv/'
         dataset = PygNodePropPredDataset(name='ogbn-arxiv', root='./data/')
-
+    elif (args.dataset in Coauthor_list):
+        dataset = Coauthor(root='./data/',name =args.dataset,  \
+                          transform=T.NormalizeFeatures())
+        print('datasets', dataset[0])
+    elif (args.dataset in Amazon_list):
+        dataset = Amazon(root='./data/',name =args.dataset,  \
+                          transform=T.NormalizeFeatures())
 
 
     print(f'Dataset: {dataset}:')
@@ -61,6 +69,10 @@ def main(args, logger):
 
     if args.dataset == "ogbn-arxiv":
         data = ogba_arxiv_data(dataset)
+    elif args.dataset in Amazon_list:
+        data = Amazon_data(dataset)
+    elif args.dataset in Coauthor_list:
+        data = Coauthor_data(dataset)
     else:
         data = dataset[0]  # Get the graph object.
     args.avg_degree = data.num_edges / data.num_nodes

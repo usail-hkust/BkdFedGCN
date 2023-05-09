@@ -16,7 +16,7 @@ def args_parser():
     parser.add_argument('--dataset', type=str, default='Cora',
                         help='Dataset',
                         choices=['Cora', 'Citeseer', 'Pubmed', 'Flickr', 'ogbn-arxiv', 'Reddit', 'Reddit2',
-                                 'Yelp'])
+                                 'Yelp',"Cs","Physics","computers","photo"])
     parser.add_argument('--train_lr', type=float, default=0.01,
                         help='Initial learning rate.')
     parser.add_argument('--weight_decay', type=float, default=5e-4,

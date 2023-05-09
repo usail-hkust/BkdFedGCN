@@ -1,7 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
-  <component name="PublishConfigData" serverName="29BkdFedGCN">
+  <component name="PublishConfigData" serverName="27BkdFedGCN">
     <serverData>
+      <paths name="27BkdFedGCN">
+        <serverdata>
+          <mappings>
+            <mapping deploy="/home/liufan/projects/BkdFedGCN" local="$PROJECT_DIR$" web="/" />
+          </mappings>
+        </serverdata>
+      </paths>
       <paths name="29BkdFedGCN">
         <serverdata>
           <mappings>
