@@ -112,6 +112,7 @@ def main(args, logger):
         print(f'Number of test: {client_data[i].test_mask.sum()}')
     #Create train, test masks
     client_train_edge_index = []
+
     client_edge_mask = []
     client_mask_edge_index = []
     client_unlabeled_idx = []
@@ -262,30 +263,44 @@ def main(args, logger):
                                                                                  client_idx_val[j].to(device),
                                                                                  train_iters=args.inner_epochs, verbose=False)
 
-                    output = model_list[j](client_poison_x[j].to(device), client_poison_edge_index[j].to(device), client_poison_edge_weights[j].to(device))
-                    train_attach_rate = (output.argmax(dim=1)[idx_attach] == args.target_class).float().mean()
-                    print("malicious client: {} ,target class rate on Vs: {:.4f}".format(j,train_attach_rate))
+                    # output = model_list[j](client_poison_x[j].to(device), client_poison_edge_index[j].to(device), client_poison_edge_weights[j].to(device))
+                    # train_attach_rate = (output.argmax(dim=1)[idx_attach] == args.target_class).float().mean()
+                    print("Malicious client: {} ,Acc train: {:.4f}, Acc val: {:.4f}".format(j,acc_train,acc_val))
+
                     induct_edge_index = torch.cat([client_poison_edge_index[j].to(device), client_mask_edge_index[j].to(device)], dim=1)
                     induct_edge_weights = torch.cat(
                         [client_poison_edge_weights[j], torch.ones([client_mask_edge_index[j].shape[1]], dtype=torch.float, device=device)])
 
-                    clean_acc = model_list[j].test(client_poison_x[j].to(device), induct_edge_index.to(device),
-                                                   induct_edge_weights.to(device), client_data[j].y.to(device),
-                                                   client_idx_clean_test[j].to(device))
+
+                    # clean_acc = model_list[j].test(client_poison_x[j].to(device), induct_edge_index.to(device),
+                    #                                induct_edge_weights.to(device), client_data[j].y.to(device),
+                    #                                client_idx_clean_test[j].to(device))
                 else:
+                    #client_train_edge_index
+                    train_edge_weights = torch.ones([client_train_edge_index[j].shape[1]]).to(device)
                     loss_train, loss_val, acc_train, acc_val = model_list[j].fit(client_data[j].x.to(device),
-                                                                                 client_data[j].edge_index.to(device),
-                                                                                 client_data[j].edge_weight.to(device),
+                                                                                 client_train_edge_index[j].to(device),
+                                                                                 train_edge_weights.to(device),
                                                                                  client_data[j].y.to(device),
                                                                                  client_idx_train[j].to(device),
                                                                                  client_idx_val[j].to(device),
                                                                                  train_iters=args.inner_epochs,
                                                                                  verbose=False)
 
+                    print("Clean client: {} ,Acc train: {:.4f}, Acc val: {:.4f}".format(j, acc_train, acc_val))
+                    # loss_train, loss_val, acc_train, acc_val = model_list[j].fit(client_data[j].x.to(device),
+                    #                                                              client_data[j].edge_index.to(device),
+                    #                                                              client_data[j].edge_weight.to(device),
+                    #                                                              client_data[j].y.to(device),
+                    #                                                              client_idx_train[j].to(device),
+                    #                                                              client_idx_val[j].to(device),
+                    #                                                              train_iters=args.inner_epochs,
+                    #                                                              verbose=False)
+
                     induct_x, induct_edge_index, induct_edge_weights = client_data[j].x, client_data[j].edge_index, client_data[j].edge_weight
-                    clean_acc = model_list[j].test(client_data[j].x.to(device), client_data[j].edge_index.to(device),
-                                                   client_data[j].edge_weight.to(device), client_data[j].y.to(device),
-                                                   client_idx_clean_test[j].to(device))
+                    # clean_acc = model_list[j].test(client_data[j].x.to(device), client_data[j].edge_index.to(device),
+                    #                                client_data[j].edge_weight.to(device), client_data[j].y.to(device),
+                    #                                client_idx_clean_test[j].to(device))
 
                 # save worker results
                 for ele in worker_results[f"client_{j}"]:
@@ -305,19 +320,21 @@ def main(args, logger):
             logger.log(worker_results)
         else:
             for j in range(args.num_workers):
+
+                train_edge_weights = torch.ones([client_train_edge_index[j].shape[1]]).to(device)
                 loss_train, loss_val, acc_train, acc_val = model_list[j].fit(client_data[j].x.to(device),
-                                                                             client_data[j].edge_index.to(device),
-                                                                             client_data[j].edge_weight.to(device),
+                                                                             client_train_edge_index[j].to(device),
+                                                                             train_edge_weights.to(device),
                                                                              client_data[j].y.to(device),
                                                                              client_idx_train[j].to(device),
                                                                              client_idx_val[j].to(device),
                                                                              train_iters=args.inner_epochs,
                                                                              verbose=False)
-
+                print("Clean client: {} ,Acc train: {:.4f}, Acc val: {:.4f}".format(j, acc_train, acc_val))
                 induct_x, induct_edge_index, induct_edge_weights = client_data[j].x, client_data[j].edge_index, client_data[j].edge_weight
-                clean_acc = model_list[j].test(client_data[j].x.to(device), client_data[j].edge_index.to(device),
-                                               client_data[j].edge_weight.to(device), client_data[j].y.to(device),
-                                               client_idx_clean_test[j].to(device))
+                # clean_acc = model_list[j].test(client_data[j].x.to(device), client_data[j].edge_index.to(device),
+                #                                client_data[j].edge_weight.to(device), client_data[j].y.to(device),
+                #                                client_idx_clean_test[j].to(device))
 
                 # save worker results
                 for ele in worker_results[f"client_{j}"]:
@@ -336,7 +353,7 @@ def main(args, logger):
             # wandb logger
             logger.log(worker_results)
 
-            print("accuracy on clean test nodes: {:.4f}".format(clean_acc))
+            # print("accuracy on clean test nodes: {:.4f}".format(clean_acc))
 
             # Server Aggregation
             Sub_model_list = random.sample(model_list, args.num_sample_submodels)
@@ -347,6 +364,7 @@ def main(args, logger):
                 # Send global to the local
                 for cl in model_list:
                     cl.state_dict()[param_tensor].copy_(avg)
+
 
     # Test performance
 
