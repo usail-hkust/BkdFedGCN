@@ -10,9 +10,27 @@ import numpy as np
 import scipy.sparse as sp
 from torch_geometric.utils import from_scipy_sparse_matrix
 from Node_level_Models.helpers.func_utils import accuracy
+
+
+# class GAT(torch.nn.Module):
+#     def __init__(self, in_channels, hidden_channels, out_channels, heads):
+#         super().__init__()
+#         self.conv1 = GATConv(in_channels, hidden_channels, heads, dropout=0.6)
+#         # On the Pubmed dataset, use `heads` output heads in `conv2`.
+#         self.conv2 = GATConv(hidden_channels * heads, out_channels, heads=1,
+#                              concat=False, dropout=0.6)
+#
+#     def forward(self, x, edge_index):
+#         x = F.dropout(x, p=0.6, training=self.training)
+#         x = F.elu(self.conv1(x, edge_index))
+#         x = F.dropout(x, p=0.6, training=self.training)
+#         x = self.conv2(x, edge_index)
+#         return x
+
+
 class GAT(nn.Module):
 
-    def __init__(self, nfeat, nhid, nclass, heads=8,dropout=0.5, lr=0.01, weight_decay=5e-4, with_relu=True, with_bias=True, self_loop=True ,device=None):
+    def __init__(self, nfeat, nhid, nclass, heads=8,dropout=0.5, lr=0.01, weight_decay=5e-4, with_relu=True, with_bias=True, self_loop=True, device=None):
 
         super(GAT, self).__init__()
 
@@ -38,13 +56,24 @@ class GAT(nn.Module):
         self.edge_weight = None
         self.features = None
 
+        self.conv1 = GATConv(nfeat, nhid, heads, dropout=0.6)
+        # On the Pubmed dataset, use `heads` output heads in `conv2`.
+        self.conv2 = GATConv(heads*nhid, nclass, heads=1,
+                             concat=False, dropout=0.6)
+
     def forward(self, x, edge_index, edge_weight=None): 
-        x = F.dropout(x, p=self.dropout, training=self.training)    # optional
-        # x = F.elu(self.gc1(x, edge_index, edge_weight))   # may apply later 
-        x = F.elu(self.gc1(x, edge_index))
-        x = F.dropout(x, self.dropout, training=self.training)
+        # x = F.dropout(x, p=self.dropout, training=self.training)    # optional
+        # x = F.elu(self.gc1(x, edge_index, edge_weight))   # may apply later
+        # #x = F.elu(self.gc1(x, edge_index))
+        # x = F.dropout(x, self.dropout, training=self.training)
         # x = self.gc2(x, edge_index, edge_weight)
-        x = self.gc2(x, edge_index)
+        # #x = self.gc2(x, edge_index)
+        x = F.dropout(x, p=0.6, training=self.training)
+        x = F.elu(self.conv1(x, edge_index))
+        x = F.dropout(x, p=0.6, training=self.training)
+        x = self.conv2(x, edge_index)
+
+
         return F.log_softmax(x,dim=1)
 
     def initialize(self):
@@ -69,10 +98,12 @@ class GAT(nn.Module):
     def _train_without_val(self, labels, idx_train, train_iters, verbose):
         self.train()
         optimizer = optim.Adam(self.parameters(), lr=self.lr, weight_decay=self.weight_decay)
+        #optimizer = torch.optim.Adam(self.parameters(), lr=0.005, weight_decay=5e-4)
         for i in range(train_iters):
             optimizer.zero_grad()
             output = self.forward(self.features, self.edge_index, self.edge_weight)
-            loss_train = F.nll_loss(output[idx_train], labels[idx_train])
+            #loss_train = F.nll_loss(output[idx_train], labels[idx_train])
+            loss_train = F.cross_entropy(output[idx_train], labels[idx_train])
             loss_train.backward()
             optimizer.step()
             if verbose and i % 10 == 0:
@@ -94,7 +125,8 @@ class GAT(nn.Module):
             self.train()
             optimizer.zero_grad()
             output = self.forward(self.features, self.edge_index, self.edge_weight)
-            loss_train = F.nll_loss(output[idx_train], labels[idx_train])
+            #loss_train = F.nll_loss(output[idx_train], labels[idx_train])
+            loss_train = F.cross_entropy(output[idx_train], labels[idx_train])
             loss_train.backward()
             optimizer.step()
 
@@ -103,7 +135,8 @@ class GAT(nn.Module):
             self.eval()
             with torch.no_grad():
                 output = self.forward(self.features, self.edge_index,self.edge_weight)
-                loss_val = F.nll_loss(output[idx_val], labels[idx_val])
+                #loss_val = F.nll_loss(output[idx_val], labels[idx_val])
+                loss_val = F.cross_entropy(output[idx_val], labels[idx_val])
                 acc_val = accuracy(output[idx_val], labels[idx_val])
                 acc_train = accuracy(output[idx_train], labels[idx_train])
             if verbose and i % 10 == 0:
