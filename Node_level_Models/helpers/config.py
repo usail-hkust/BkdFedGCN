@@ -56,9 +56,6 @@ def args_parser():
     parser.add_argument('--trigger_position', type=str, default='random',
                         choices=[ 'learn_cluster', 'random', 'learn_cluster_degree',"degree","cluster"],
                         help='Method to select idx_attach for training trojan model')
-    parser.add_argument('--test_model', type=str, default='GCN',
-                        choices=['GCN', 'GAT', 'GraphSage', 'GIN'],
-                        help='Model used to attack')
     parser.add_argument('--evaluate_mode', type=str, default='1by1',
                         choices=['overall', '1by1'],
                         help='Model used to attack')
