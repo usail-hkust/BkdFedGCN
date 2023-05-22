@@ -34,7 +34,7 @@ def model_construct(args,model_name,data,device):
         
     elif(model_name == 'GAT'):
         model = GAT(nfeat=data.x.shape[1], 
-                    nhid=args.hidden, 
+                    nhid=8,
                     nclass=nclass,
                     heads=8,
                     dropout=args.dropout, 
