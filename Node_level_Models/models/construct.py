@@ -14,11 +14,17 @@ def model_construct(args,model_name,data,device):
     else:
         use_ln = False
         layer_norm_first = False
+
+    if args.dataset == "computers":
+        nclass = 10
+    else:
+        nclass = int(data.y.max() + 1)
+
     if (model_name == 'GCN'):
 
         model = GCN(nfeat=data.x.shape[1],\
                     nhid=args.hidden,\
-                    nclass= int(data.y.max()+1),\
+                    nclass= nclass,\
                     dropout=args.dropout,\
                     lr=args.train_lr,\
                     weight_decay=args.weight_decay,\
@@ -29,7 +35,7 @@ def model_construct(args,model_name,data,device):
     elif(model_name == 'GAT'):
         model = GAT(nfeat=data.x.shape[1], 
                     nhid=args.hidden, 
-                    nclass=int(data.y.max()+1), 
+                    nclass=nclass,
                     heads=8,
                     dropout=args.dropout, 
                     lr=args.train_lr, 
@@ -38,7 +44,7 @@ def model_construct(args,model_name,data,device):
     elif(model_name == 'GraphSage'):
         model = GraphSage(nfeat=data.x.shape[1],\
                 nhid=args.hidden,\
-                nclass= int(data.y.max()+1),\
+                nclass= nclass,\
                 dropout=args.dropout,\
                 lr=args.train_lr,\
                 weight_decay=args.weight_decay,\
@@ -46,7 +52,7 @@ def model_construct(args,model_name,data,device):
     elif(model_name == 'GCN_Encoder'):
         model = GCN_Encoder(nfeat=data.x.shape[1],                    
                             nhid=args.hidden,                    
-                            nclass= int(data.y.max()+1),                    
+                            nclass= nclass,
                             dropout=args.dropout,                    
                             lr=args.train_lr,                    
                             weight_decay=args.weight_decay,                    
@@ -56,7 +62,7 @@ def model_construct(args,model_name,data,device):
     elif(model_name == 'GNNGuard'):
         model = GNNGuard(nfeat=data.x.shape[1],\
                     nhid=args.hidden,\
-                    nclass= int(data.y.max()+1),\
+                    nclass= nclass,\
                     dropout=args.dropout,\
                     lr=args.train_lr,\
                     weight_decay=args.weight_decay,\
@@ -65,7 +71,7 @@ def model_construct(args,model_name,data,device):
     elif(model_name == 'MedianGCN'):
         model = MedianGCN(nfeat=data.x.shape[1],\
                     nhid=args.hidden,\
-                    nclass= int(data.y.max()+1),\
+                    nclass= nclass,\
                     dropout=args.dropout,\
                     lr=args.train_lr,\
                     weight_decay=args.weight_decay,\
@@ -73,7 +79,7 @@ def model_construct(args,model_name,data,device):
     elif(model_name == 'RobustGCN'):
         model = RobustGCN(nfeat=data.x.shape[1],\
                     nhid=args.hidden,\
-                    nclass= int(data.y.max()+1),\
+                    nclass= nclass,\
                     dropout=args.dropout,\
                     lr=args.train_lr,\
                     weight_decay=args.weight_decay,\

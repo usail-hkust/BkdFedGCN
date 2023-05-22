@@ -71,6 +71,7 @@ def main(args, logger):
         data = ogba_arxiv_data(dataset)
     elif args.dataset in Amazon_list:
         data = Amazon_data(dataset)
+        data.y = data.y.to(dtype=torch.long)
     elif args.dataset in Coauthor_list:
         data = Coauthor_data(dataset)
     else:
@@ -228,11 +229,11 @@ def main(args, logger):
     # Initialize clients
     model_list = []
     for i in range(args.num_workers):
-        test_model = model_construct(args, args.test_model, data, device).to(device)
+        test_model = model_construct(args, args.model, data, device).to(device)
         model_list.append(test_model)
 
     # Initialize the sever model
-    severe_model = model_construct(args, args.test_model, data, device).to(device)
+    severe_model = model_construct(args, args.model, data, device).to(device)
 
     random.seed(args.seed)
     #rs = random.sample(range(0,args.num_clients),args.num_malicious)
@@ -255,6 +256,8 @@ def main(args, logger):
         if epoch >= args.epoch_backdoor:
             for j in range(args.num_workers):
                 if j in rs:
+                    print("client_bkd_tn_nodes[j].to(device)",client_bkd_tn_nodes[j].to(device))
+
                     loss_train, loss_val, acc_train, acc_val = model_list[j].fit(client_poison_x[j].to(device),
                                                                                  client_poison_edge_index[j].to(device),
                                                                                  client_poison_edge_weights[j].to(device),

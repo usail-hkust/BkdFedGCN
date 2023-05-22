@@ -44,6 +44,10 @@ def Amazon_data(dataset):
     graph = dataset[0]
 
     labels = graph.y.numpy()
+
+    # num_classes = torch.unique(torch.from_numpy(labels)).size(0)
+    # print("num classes", num_classes)
+
     dev_size = int(labels.shape[0] * 0.1)
     test_size = int(labels.shape[0] * 0.8)
 
@@ -80,7 +84,7 @@ def Amazon_data(dataset):
     # # create edge_index tensor by transposing the indices tensor
     # edge_index = indices.t()
     # graph.edge_index = edge_index
-    print("graph",graph)
+
     return graph
 def Coauthor_data(dataset):
 
@@ -124,5 +128,5 @@ def Coauthor_data(dataset):
     # # create edge_index tensor by transposing the indices tensor
     # edge_index = indices.t()
     # graph.edge_index = edge_index
-    print("graph",graph)
+
     return graph

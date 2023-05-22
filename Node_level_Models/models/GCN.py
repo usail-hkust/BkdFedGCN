@@ -126,9 +126,11 @@ class GCN(nn.Module):
             self.train()
             optimizer.zero_grad()
 
-
             output = self.forward(self.features, self.edge_index, self.edge_weight)
             loss_train = F.nll_loss(output[idx_train], labels[idx_train])
+
+
+
             loss_train.backward()
             optimizer.step()
 
