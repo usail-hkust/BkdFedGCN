@@ -122,11 +122,11 @@ class GraphSage(nn.Module):
             if verbose and i % 10 == 0:
                 print('Epoch {}, training loss: {}'.format(i, loss_train.item()))
                 print("acc_val: {:.4f}".format(acc_val))
-            if acc_val > best_acc_val:
+            if acc_val >= best_acc_val:
                 best_acc_val = acc_val
                 self.output = output
                 weights = deepcopy(self.state_dict())
-
+        print("acc_val",acc_val)
         if verbose:
             print('=== picking the best model according to the performance on validation ===')
         self.load_state_dict(weights)
