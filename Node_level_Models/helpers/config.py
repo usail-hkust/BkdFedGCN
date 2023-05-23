@@ -73,7 +73,7 @@ def args_parser():
     # federated setting
     parser.add_argument('--num_mali', type=int, default=1,
                         help="number of malicious attacker")
-    parser.add_argument('--overlapping_rate', type=float, default=0.0, choices=[0.0,0.1,0.2,0.3,0.4],
+    parser.add_argument('--overlapping_rate', type=float, default=0.0, choices=[0.0,0.1,0.2,0.3,0.4,0.5],
                         help="Additional samples of overlapping data")
     parser.add_argument("--is_iid", type=str, default="iid", choices=["iid", "non-iid-louvain"],
                         help="split the graph into the clients: random is randomly split, louvain is the community detection method")
