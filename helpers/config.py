@@ -35,6 +35,8 @@ def args_parser():
                         help='device id')
     parser.add_argument('--filename', type = str, default = "", help='path of output file(save results)')
     parser.add_argument('--epoch_backdoor', type=int, default=0, help='from which epoch the malicious clients start backdoor attack')
+    parser.add_argument('--surrogate_topo_thrd', type=float, default=0.5,
+                        help='The paramater in GTA for generating trigger')
     parser.add_argument('--seed', type=int, default=0, help='0-9')
 
     args = parser.parse_args()

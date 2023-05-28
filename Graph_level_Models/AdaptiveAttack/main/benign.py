@@ -168,7 +168,7 @@ def run(args, datasets, device):
     args.surrogate_gtn_layernum = 3
     args.surrogate_resample_steps = 3
     args.surrogate_bilevel_steps = 4
-    args.surrogate_topo_thrd = 0.5
+    # args.surrogate_topo_thrd = 0.5
     args.surrogate_gtn_epochs = 20
     args.surrogate_feat_thrd  = 0.0
     args.surrogate_topo_activation = 'sigmoid'
