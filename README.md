@@ -11,11 +11,6 @@ To address these limitations, we propose a benchmark, Bkd-FedGNN, for graph back
 
 This project is tested under the following environment settings:
 
-> Node Level (TODO)
-- OS: Ubuntu 18.04.4
-
-
-> Graph Level (TODO)
 - torch>=1.9.0
 - torchvision>=0.10.0
 - numpy>=1.23.2
