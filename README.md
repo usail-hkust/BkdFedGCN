@@ -1,8 +1,9 @@
-# Benchmarking the Impact of Multi-Component Backdoor Attacks on Federated Graph Learning for Node and Graph Classification Tasks
+# Bkd-FedGNN: A Benchmark for Classification Backdoor Attacks on Federated Graph Neural Networks
 
 This study presents a benchmark analysis of the impact of multi-component backdoor attacks on federated graph learning for both node and graph classification tasks. The aim is to explore the effects of these attacks on various components of the learning process and provide insights into their potential impact on model performance.
 
-[Backdoor Attack on Federated Graph Learning ]() (xx 2023)
+Graph neural networks (GNNs) enhance model generalizability and leverage large-scale graph datasets by incorporating the message-passing mechanism, but their practical application faces data privacy challenges that hinder data sharing. To overcome this, federated GNNs combine GNNs with federated learning (FL), enabling machine learning systems to be trained without direct access to sensitive data. However, federated learning's distributed nature introduces vulnerabilities, particularly backdoor attacks resulting from privacy issues. The exploration of graph backdoor attacks on federated GNNs has revealed vulnerabilities in these systems. However, due to the complex settings in federated learning, graph backdoor attacks have not been fully explored. This lack of exploration is attributed to insufficient benchmark coverage and inadequate analysis of critical factors with graph backdoor attacks on federated GNNs.
+To address these limitations, we propose a benchmark, Bkd-FedGNN, for graph backdoor attacks on federated GNNs. In detail,    we provide a unified framework for classification  backdoor attacks on federated GNNs, encompassing both node-level and graph-level classification tasks. This framework decomposes the graph backdoor attack into trigger generation and trigger injection steps, extending the node-level backdoor attack to the federated GNNs setting. In addition, we thoroughly investigate the impact of multiple critical factors on graph backdoor attacks in federated GNNs. These factors are categorized into global-level and local-level factors, including data distribution, the number of malicious attackers, attack time, overlapping rate, trigger size, trigger type, trigger position, and poisoning rate.
 
 
 
@@ -23,22 +24,10 @@ This project is tested under the following environment settings:
 - hdbscan==0.8.28
 - joblib==1.1.0
 
-## Acknowledgement
-The codes are modifed based on [Xu et al. 2020](https://github.com/xujing1994/bkd_fedgnn) and [Dai et al. 2020](https://github.com/ventr1c/UGBA)
-Note that  the authors demonstrate how the node level backdoor attack can be adapted to the federated graph learning settings.
+
 
 ## Threat Model
 We consider the most widely studied setting:
-### Adversary goal:
-- **To introduce backdoors into the  model so that it misclassifies specific pre-determined labels (i.e., target label) in backdoored data samples without affecting the accuracy on clean data**.
-### Adversary capability：
-- **The adversary can corrupt 𝑀 clients by injecting poisoned local datasets in every round**.
-- **The adversary cannot impact the aggregation process on the central server or the training or model updates of other clients**.
-- **The adversary has knowledge of the target label that they want the backdoor to trigger**.
-###  Assumptions:
-- **The global model is trained using a federated learning approach, where multiple clients train the model collaboratively**.
-- **The adversary has access to a subset of clients and can inject poisoned local datasets on these clients**.
-
 ### Attack Objective: 
 - Assuming there are a total of $K$ clients, with $M$ ($M \leq K$) of them being malicious, each malicious attacker independently conducts the backdoor attack on their own models.  The primary goal of a backdoor attack is to manipulate the model in such a way that it misclassifies specific pre-defined labels (known as target labels) only within the poisoned data samples. It is important to ensure that the model's accuracy remains unaffected when processing clean data. 
 
@@ -70,7 +59,7 @@ We consider the most widely studied GCN models:
 
 
 
-###  Uncovering the Use of Multiple Components in Backdoor Attacks on Federated Graph Neural Networks: Insights from Graph Classification Experiments
+###  Multiple Factors in Backdoor Attacks on Federated Graph Neural Networks: Insights from Graph Classification Experiments
 
 
 |        | Component            | Paramater                                                                             | Control                 | Default Value | Choice                           |
@@ -122,57 +111,25 @@ python run_graph_exps.py --dataset NCI1 \
 
 > Each experiment was repeated 5 times with a different seed each time
 
-> Refer:
-> Each experiment was repeated 10 times with a different seed each time
+## Graph Backdoor attacks on  Node Classification in Federated GNNs
 
-
-### Component Candidates (need to change according to the experiments)
-Importance rate: *Critical*; *Useful*; *Insignificance*
-
-- **Early stopping w.r.t. training epochs** (*Critical*).
-Early stopping w.r.t. training epochs was first introduced in the [code of TRADES](https://github.com/yaodongyu/TRADES), and was later thoroughly studied by [Rice et al., 2020](https://arxiv.org/abs/2002.11569). Due to its effectiveness, we regard this trick as a default choice.
-
-- **Early stopping w.r.t. attack intensity** (*Useful*). Early stopping w.r.t. attack iterations was studied by [Wang et al. 2019](proceedings.mlr.press/v97/wang19i/wang19i.pdf) and [Zhang et al. 2020](https://arxiv.org/abs/2002.11242). Here we exploit the strategy of the later one, where the authors show that this trick can promote clean accuracy. The relevant flags include `--earlystopPGD` indicates whether apply this trick, while '--earlystopPGDepoch1' and '--earlystopPGDepoch2' separately indicate the epoch to increase the tolerence t by one, as detailed in [Zhang et al. 2020](https://arxiv.org/abs/2002.11242). (*Note that early stopping attack intensity may degrade worst-case robustness under strong attacks*)
-
-- **Warmup w.r.t. learning rate** (*Insignificance*). Warmup w.r.t. learning rate was found useful for [FastAT](https://arxiv.org/abs/2001.03994), while [Rice et al., 2020](https://arxiv.org/abs/2002.11569) found that piecewise decay schedule is more compatible with early stop w.r.t. training epochs. The relevant flags include `--warmup_lr` indicates whether apply this trick, while `--warmup_lr_epoch` indicates the end epoch of the gradually increase of learning rate.
-
-- **Warmup w.r.t. epsilon** (*Insignificance*). [Qin et al. 2019](https://arxiv.org/abs/1907.02610) use warmup w.r.t. epsilon in their implementation, where the epsilon gradually increase from 0 to 8/255 in the first 15 epochs. Similarly, the relevant flags include `--warmup_eps` indicates whether apply this trick, while `--warmup_eps_epoch` indicates the end epoch of the gradually increase of epsilon.
-
-- **Batch size** (*Insignificance*). The typical batch size used for CIFAR-10 is 128 in the adversarial setting. In the meanwhile, [Xie et al. 2019](https://arxiv.org/pdf/1812.03411.pdf) apply a large batch size of 4096 to perform adversarial training on ImageNet, where the model is distributed on 128 GPUs and has quite robust performance. The relevant flag is `--batch-size`. According to [Goyal et al. 2017](https://arxiv.org/abs/1706.02677), we take bs=128 and lr=0.1 as a basis, and scale the lr when we use larger batch size, e.g., bs=256 and lr=0.2.
-
-- **Label smoothing** (*Useful*). Label smoothing is advocated by [Shafahi et al. 2019](https://arxiv.org/abs/1910.11585) to mimic the adversarial training procedure. The relevant flags include `--labelsmooth` indicates whether apply this trick, while `--labelsmoothvalue` indicates the degree of smoothing applied on the label vectors. When `--labelsmoothvalue=0`, there is no label smoothing applied. (*Note that only moderate label smoothing (~0.2) is helpful, while exccessive label smoothing (>0.3) could be harmful, as observed in [Jiang et al. 2020](https://arxiv.org/abs/2006.13726)*)
-
-- **Optimizer** (*Insignificance*). Most of the AT methods apply SGD with momentum as the optimizer. In other cases, [Carmon et al. 2019](https://arxiv.org/abs/1905.13736) apply SGD with Nesterov, and [Rice et al., 2020](https://arxiv.org/abs/2002.11569) apply Adam for cyclic learning rate schedule. The relevant flag is `--optimizer`, which include common optimizers implemented by official Pytorch API and recently proposed gradient centralization trick by [Yong et al. 2020](https://arxiv.org/abs/2004.01461).
-
-- **Weight decay** (*Critical*). The values of weight decay used in previous AT methods mainly fall into `1e-4` (e.g., [Wang et al. 2019](proceedings.mlr.press/v97/wang19i/wang19i.pdf)), `2e-4` (e.g., [Madry et al. 2018](https://arxiv.org/abs/1706.06083)), and `5e-4` (e.g., [Rice et al., 2020](https://arxiv.org/abs/2002.11569)). We find that slightly different values of weight decay could largely affect the robustness of the adversarially trained models.
-
-- **Activation function** (*Useful*). As shown in [Xie et al., 2020a](https://arxiv.org/pdf/2006.14536.pdf), the smooth alternatives of `ReLU`, including `Softplus` and `GELU` can promote the performance of adversarial training. The relevant flags are `--activation` to choose the activation, and `--softplus_beta` to set the beta for Softplus. Other hyperparameters are used by default in the code.
-
-- **BN mode** (*Useful*). TRADES applies eval mode of BN when crafting adversarial examples during training, while PGD-AT methods implemented by [Madry et al. 2018](https://arxiv.org/abs/1706.06083) or [Rice et al., 2020](https://arxiv.org/abs/2002.11569) use train mode of BN to craft training adversarial examples. As indicated by [Xie et al., 2020b](https://arxiv.org/pdf/1906.03787.pdf), properly dealing with BN layers is critical to obtain a well-performed adversarially trained model, while train mode of BN during multi-step PGD process may blur the distribution. 
-
-
-### NCI1 (need to change according to the experiments)
-|paper           | Architecture | clean         | AA |
-|---|:---:|:---:|:---:|
-| **OURS (TRADES)**[[Checkpoint](http://ml.cs.tsinghua.edu.cn/~xiaoyang/downloads/bag_of_tricks/wide20_trades_eps8_tricks.pt)] | WRN-34-20| 86.43 | 54.39 |
-| **OURS (TRADES)**[[Checkpoint](http://ml.cs.tsinghua.edu.cn/~xiaoyang/downloads/bag_of_tricks/wide10_trades_eps8_tricks.pt)] | WRN-34-10| 85.48 | 53.80 |
-| [(Pang et al., 2020)](https://arxiv.org/abs/2002.08619) | WRN-34-20| 85.14 | 53.74 |
-| [(Zhang et al., 2020)](https://arxiv.org/abs/2002.11242)| WRN-34-10| 84.52 | 53.51 |
-| [(Rice et al., 2020)](https://arxiv.org/abs/2002.11569) | WRN-34-20| 85.34 | 53.35 |
-
-
-## Backdoor attack on  Node Classification in Federated Graph Learning 
-###  Train a clean Federated GNN model
-```
-python TO DO
-```
 
 ###  Backdoor attack  in Federated GNNs
 ```
-python TO DO
+python run_node_exps.py  --model GCN\
+                         --dataset Cora\
+                         --is_iid iid\
+                         --num_workers 5\
+                         --num_mali 1\
+                         --epoch_backdoor 0\
+                         --trigger_size 3\
+                         --trigger_type renyi\
+                         --trigger_position random\
+                         --poisoning_intensity 0.1\
+                         --overlapping_rate 0.0
 ```
 
-###  Multi-components in Backdoor attack  in Federated GNNs: Graph Classification experiments
+###  Multi Factors in Backdoor attack  in Federated GNNs: Graph Classification experiments
 
 
 |        | Component            | Paramater                                                                             | Control                 | Default Value | Choice                           |
@@ -195,66 +152,7 @@ python TO DO
 - **Learning rate**: `0.01`
 
  
-running command for training:
-```python
-python run_node_exps.py  --model GCN\
-                         --dataset Cora\
-                         --is_iid iid\
-                         --num_workers 5\
-                         --num_mali 1\
-                         --epoch_backdoor 0\
-                         --trigger_size 3\
-                         --trigger_type renyi\
-                         --trigger_position random\
-                         --poisoning_intensity 0.1\
-                         --overlapping_rate 0.0
-```
-
 > Each experiment was repeated 5 times with a different seed each time
-
-> Refer:
-> Each experiment was repeated 10 times with a different seed each time
-
-
-### Component Candidates (need to change according to the experiments)
-Importance rate: *Critical*; *Useful*; *Insignificance*
-
-- **Early stopping w.r.t. training epochs** (*Critical*).
-Early stopping w.r.t. training epochs was first introduced in the [code of TRADES](https://github.com/yaodongyu/TRADES), and was later thoroughly studied by [Rice et al., 2020](https://arxiv.org/abs/2002.11569). Due to its effectiveness, we regard this trick as a default choice.
-
-- **Early stopping w.r.t. attack intensity** (*Useful*). Early stopping w.r.t. attack iterations was studied by [Wang et al. 2019](proceedings.mlr.press/v97/wang19i/wang19i.pdf) and [Zhang et al. 2020](https://arxiv.org/abs/2002.11242). Here we exploit the strategy of the later one, where the authors show that this trick can promote clean accuracy. The relevant flags include `--earlystopPGD` indicates whether apply this trick, while '--earlystopPGDepoch1' and '--earlystopPGDepoch2' separately indicate the epoch to increase the tolerence t by one, as detailed in [Zhang et al. 2020](https://arxiv.org/abs/2002.11242). (*Note that early stopping attack intensity may degrade worst-case robustness under strong attacks*)
-
-- **Warmup w.r.t. learning rate** (*Insignificance*). Warmup w.r.t. learning rate was found useful for [FastAT](https://arxiv.org/abs/2001.03994), while [Rice et al., 2020](https://arxiv.org/abs/2002.11569) found that piecewise decay schedule is more compatible with early stop w.r.t. training epochs. The relevant flags include `--warmup_lr` indicates whether apply this trick, while `--warmup_lr_epoch` indicates the end epoch of the gradually increase of learning rate.
-
-- **Warmup w.r.t. epsilon** (*Insignificance*). [Qin et al. 2019](https://arxiv.org/abs/1907.02610) use warmup w.r.t. epsilon in their implementation, where the epsilon gradually increase from 0 to 8/255 in the first 15 epochs. Similarly, the relevant flags include `--warmup_eps` indicates whether apply this trick, while `--warmup_eps_epoch` indicates the end epoch of the gradually increase of epsilon.
-
-- **Batch size** (*Insignificance*). The typical batch size used for CIFAR-10 is 128 in the adversarial setting. In the meanwhile, [Xie et al. 2019](https://arxiv.org/pdf/1812.03411.pdf) apply a large batch size of 4096 to perform adversarial training on ImageNet, where the model is distributed on 128 GPUs and has quite robust performance. The relevant flag is `--batch-size`. According to [Goyal et al. 2017](https://arxiv.org/abs/1706.02677), we take bs=128 and lr=0.1 as a basis, and scale the lr when we use larger batch size, e.g., bs=256 and lr=0.2.
-
-- **Label smoothing** (*Useful*). Label smoothing is advocated by [Shafahi et al. 2019](https://arxiv.org/abs/1910.11585) to mimic the adversarial training procedure. The relevant flags include `--labelsmooth` indicates whether apply this trick, while `--labelsmoothvalue` indicates the degree of smoothing applied on the label vectors. When `--labelsmoothvalue=0`, there is no label smoothing applied. (*Note that only moderate label smoothing (~0.2) is helpful, while exccessive label smoothing (>0.3) could be harmful, as observed in [Jiang et al. 2020](https://arxiv.org/abs/2006.13726)*)
-
-- **Optimizer** (*Insignificance*). Most of the AT methods apply SGD with momentum as the optimizer. In other cases, [Carmon et al. 2019](https://arxiv.org/abs/1905.13736) apply SGD with Nesterov, and [Rice et al., 2020](https://arxiv.org/abs/2002.11569) apply Adam for cyclic learning rate schedule. The relevant flag is `--optimizer`, which include common optimizers implemented by official Pytorch API and recently proposed gradient centralization trick by [Yong et al. 2020](https://arxiv.org/abs/2004.01461).
-
-- **Weight decay** (*Critical*). The values of weight decay used in previous AT methods mainly fall into `1e-4` (e.g., [Wang et al. 2019](proceedings.mlr.press/v97/wang19i/wang19i.pdf)), `2e-4` (e.g., [Madry et al. 2018](https://arxiv.org/abs/1706.06083)), and `5e-4` (e.g., [Rice et al., 2020](https://arxiv.org/abs/2002.11569)). We find that slightly different values of weight decay could largely affect the robustness of the adversarially trained models.
-
-- **Activation function** (*Useful*). As shown in [Xie et al., 2020a](https://arxiv.org/pdf/2006.14536.pdf), the smooth alternatives of `ReLU`, including `Softplus` and `GELU` can promote the performance of adversarial training. The relevant flags are `--activation` to choose the activation, and `--softplus_beta` to set the beta for Softplus. Other hyperparameters are used by default in the code.
-
-- **BN mode** (*Useful*). TRADES applies eval mode of BN when crafting adversarial examples during training, while PGD-AT methods implemented by [Madry et al. 2018](https://arxiv.org/abs/1706.06083) or [Rice et al., 2020](https://arxiv.org/abs/2002.11569) use train mode of BN to craft training adversarial examples. As indicated by [Xie et al., 2020b](https://arxiv.org/pdf/1906.03787.pdf), properly dealing with BN layers is critical to obtain a well-performed adversarially trained model, while train mode of BN during multi-step PGD process may blur the distribution. 
-
-
-### NCI1 (need to change according to the experiments)
-|paper           | Architecture | clean         | AA |
-|---|:---:|:---:|:---:|
-| **OURS (TRADES)**[[Checkpoint](http://ml.cs.tsinghua.edu.cn/~xiaoyang/downloads/bag_of_tricks/wide20_trades_eps8_tricks.pt)] | WRN-34-20| 86.43 | 54.39 |
-| **OURS (TRADES)**[[Checkpoint](http://ml.cs.tsinghua.edu.cn/~xiaoyang/downloads/bag_of_tricks/wide10_trades_eps8_tricks.pt)] | WRN-34-10| 85.48 | 53.80 |
-| [(Pang et al., 2020)](https://arxiv.org/abs/2002.08619) | WRN-34-20| 85.14 | 53.74 |
-| [(Zhang et al., 2020)](https://arxiv.org/abs/2002.11242)| WRN-34-10| 84.52 | 53.51 |
-| [(Rice et al., 2020)](https://arxiv.org/abs/2002.11569) | WRN-34-20| 85.34 | 53.35 |
-
-
-
-
-
-
 
 
 
@@ -266,13 +164,17 @@ Early stopping w.r.t. training epochs was first introduced in the [code of TRADE
 ## References
 If you find the code useful for your research, please consider citing
 ```bib
-@inproceedings{fan2022ASTFA,
- author =  {Fan LIU, Hao LIU, Wenzhao JIANG},
- title = {Practical Adversarial Attacks on Spatiotemporal
-Traffic Forecasting Models},
- booktitle = {In Proceedings of the Thirty-sixth Annual Conference on Neural Information Processing Systems (NeurIPS)},
- year = {2022}
- }
+ @inproceedings{fan2023RbDAT,
+  author    = {Fan LIU and
+               Weijia ZHANG and
+               Hao LIU},
+  title     = {Robust Spatiotemporal Traffic Forecasting with Reinforced  Dynamic Adversarial Training},
+  booktitle = {Proceedings of the 29th {ACM} {SIGKDD} International Conference on
+               Knowledge Discovery and Data Mining, {KDD} 2023, Long Beach, CA, USA, August 6–10, 2023},
+  pages     = {},
+  publisher = {{ACM}},
+  year      = {2023},
+  timestamp = {}
 ```
 
 and/or our related works
@@ -287,3 +189,13 @@ Traffic Forecasting Models},
  year = {2022}
  }
 ```
+
+
+
+
+
+
+## Acknowledgement
+The codes are modifed based on [Xu et al. 2020](https://github.com/xujing1994/bkd_fedgnn) and [Dai et al. 2020](https://github.com/ventr1c/UGBA)
+To the best of our knowledge, our work is the first to extend the node-level backdoor attack to the federated GNNs setting
+
