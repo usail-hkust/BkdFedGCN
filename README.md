@@ -5,7 +5,7 @@ This study presents a benchmark analysis of the impact of multi-component backdo
 Graph neural networks (GNNs) enhance model generalizability and leverage large-scale graph datasets by incorporating the message-passing mechanism, but their practical application faces data privacy challenges that hinder data sharing. To overcome this, federated GNNs combine GNNs with federated learning (FL), enabling machine learning systems to be trained without direct access to sensitive data. However, federated learning's distributed nature introduces vulnerabilities, particularly backdoor attacks resulting from privacy issues. The exploration of graph backdoor attacks on federated GNNs has revealed vulnerabilities in these systems. However, due to the complex settings in federated learning, graph backdoor attacks have not been fully explored. This lack of exploration is attributed to insufficient benchmark coverage and inadequate analysis of critical factors with graph backdoor attacks on federated GNNs.
 To address these limitations, we propose a benchmark, Bkd-FedGNN, for graph backdoor attacks on federated GNNs. In detail,    we provide a unified framework for classification  backdoor attacks on federated GNNs, encompassing both node-level and graph-level classification tasks. This framework decomposes the graph backdoor attack into trigger generation and trigger injection steps, extending the node-level backdoor attack to the federated GNNs setting. In addition, we thoroughly investigate the impact of multiple critical factors on graph backdoor attacks in federated GNNs. These factors are categorized into global-level and local-level factors, including data distribution, the number of malicious attackers, attack time, overlapping rate, trigger size, trigger type, trigger position, and poisoning rate.
 
-
+![Image text](https://raw.githubusercontent.com/hongmaju/light7Local/master/img/productShow/20170518152848.png)
 
 ## Environment settings and libraries we used in our experiments
 
@@ -37,8 +37,8 @@ The malicious client has the ability to inject triggers into the training datase
 
 ## Dataset
 We consider the most widely studied datasets:
-- **Node level:** `Cora`, `Citeseer`, `Pubmed`,`Flickr`, `Reddit`, `Reddit2`, `Yelp` 
-- **Graph level:** Molecules: `AIDS`,`NCI1` Bioinformatics: `PROTEINS_full`,`DD`, `ENZYMES`  Synthetic: `TRIANGLES`, `COLORS-3`
+- **Node level:** `Cora`, `Citeseer`, `CS`,`Physics`, `Photo`, `Computers`
+- **Graph level:** Molecules: `AIDS`,`NCI1` Bioinformatics: `PROTEINS_full`,`DD`, `ENZYMES`  Synthetic: `TRIANGLES`
 
 
 ## GCN Model
@@ -48,63 +48,6 @@ We consider the most widely studied GCN models:
 - **GraphSAGE**.
 
 
-
-## Backdoor attack on  Graph Classification in Federated Graph Learning 
-
-
-
-
-###  Multiple Factors in Backdoor Attacks on Federated Graph Neural Networks: Insights from Graph Classification Experiments
-
-
-|        | Component            | Paramater                                                                             | Control                 | Default Value | Choice                           |
-|--------|----------------------|---------------------------------------------------------------------------------------|-------------------------|---------------|----------------------------------|
-| Server |  IID & Non-IID       | Independent and identically distributed & Non Independent and identically distributed | `--is_iid`              | `iid`       | `iid`, `p-degree-non-iid`, `num-non-iid`|
-|        | Number of Workers    | The number of normal worker                                                           | `--num_workers`         | `5`           | `5`                              |
-|        | Number of Malicious  | The number of malicious attacker                                                      | `--num_mali`            | `1`           | `1`,`2`,`3`,`4`,`5`              |
-|        | Start Backdoor Time  | The time at which a backdoor is first conducted by an attacker.                       | `--epoch_backdoor`      | `0`           | int[(`0.1`,`0.2`,`0.3`,`0.4`,`0.5`) * 1000 ]|
-| Client | Trigger Size         | The size of a trigger (the number of trigger's nodes)                                 | `--frac_of_avg`         | `0.1`         | `0.1`,`0.2`,`0.3`,`0.4`,`0.5`    |
-|        | Trigger Type         | The specific type of trigger type                                                     | `--trigger_type`        | `renyi`       | `renyi`,`ws`, `ba`, `rr`, `gta`        |
-|        | Trigger Position     | Locations in a graph (subgraph) where a trigger  is inserted                          | `--trigger_position`    | `random`      | `random`,`degree`,`cluster`       |
-|        | Poisoning Rate       | Percentage of training data that has been  poisoned                                   | `--poisoning_intensity` | `0.1`         | `0.1`, `0.2`, `0.3`, `0.4`,`0.5` |
-
-Other paramaters
-
-- **Model**: `GCN`, `GAT`, `GraphSAGE`
-- **Dataset**: Molecules: `AIDS`,`NCI1` Bioinformatics: `PROTEINS_full`,`DD`, `ENZYMES` Computer Vision: `Letter-high`, `Letter-med`,`Letter-low` Synthetic: `TRIANGLES`, `COLORS-3`
-- **Optimizer**: Adam with default hyperparameters
-- **Total epoch**: `1000`
-- **Batch size**: `128`
-- **Learning rate**: `7e-4`
-
-####  Train a clean Federated GNN model
-```
-python run_clean_graph_exps.py --dataset NCI1 \
-                         --config ./Graph_level_Models/configs/TUS/TUs_graph_classification_GCN_NCI1_100k.json \
-                         --is_iid iid\
-                         --num_workers 5\
-
-```
-
-
-####  Backdoor attack  in Federated GNNs
-running command for training:
-```python
-python run_graph_exps.py --dataset NCI1 \
-                         --config ./Graph_level_Models/configs/TUS/TUs_graph_classification_GCN_NCI1_100k.json \
-                         --is_iid iid\
-                         --num_workers 5\
-                         --num_mali 1\
-                         --epoch_backdoor 0\
-                         --frac_of_avg 0.1\
-                         --trigger_type renyi\
-                         --trigger_position random\
-                         --poisoning_intensity 0.1\
-                         --filename ./checkpoints/Graph \
-                         --device_id 0
-```
-
-> Each experiment was repeated 5 times with a different seed each time
 
 ## Graph Backdoor attacks on  Node Classification in Federated GNNs
 
@@ -141,12 +84,72 @@ python run_node_exps.py  --model GCN\
 
 
 - **Model**: `GCN`, `GAT`, `GraphSAGE`
-- **Dataset**: `Cora`, `Citeseer`, `Pubmed`,`Flickr`, `Reddit`, `Reddit2`, `Yelp` 
+- **Dataset**: `Cora`, `Citeseer`, `CS`,`Physics`, `Photo`, `Computers`
 - **Optimizer**: Adam with default hyperparameters
 - **Total epoch**: `200`
 - **Learning rate**: `0.01`
 
  
+> Each experiment was repeated 5 times with a different seed each time
+
+
+
+
+## Backdoor attack on  Graph Classification in Federated Graph Learning 
+
+
+
+
+###  Multiple Factors in Backdoor Attacks on Federated Graph Neural Networks: Insights from Graph Classification Experiments
+
+
+|        | Component            | Paramater                                                                             | Control                 | Default Value | Choice                           |
+|--------|----------------------|---------------------------------------------------------------------------------------|-------------------------|---------------|----------------------------------|
+| Server |  IID & Non-IID       | Independent and identically distributed & Non Independent and identically distributed | `--is_iid`              | `iid`       | `iid`, `p-degree-non-iid`, `num-non-iid`|
+|        | Number of Workers    | The number of normal worker                                                           | `--num_workers`         | `5`           | `5`                              |
+|        | Number of Malicious  | The number of malicious attacker                                                      | `--num_mali`            | `1`           | `1`,`2`,`3`,`4`,`5`              |
+|        | Start Backdoor Time  | The time at which a backdoor is first conducted by an attacker.                       | `--epoch_backdoor`      | `0`           | int[(`0.1`,`0.2`,`0.3`,`0.4`,`0.5`) * 1000 ]|
+| Client | Trigger Size         | The size of a trigger (the number of trigger's nodes)                                 | `--frac_of_avg`         | `0.1`         | `0.1`,`0.2`,`0.3`,`0.4`,`0.5`    |
+|        | Trigger Type         | The specific type of trigger type                                                     | `--trigger_type`        | `renyi`       | `renyi`,`ws`, `ba`, `rr`, `gta`        |
+|        | Trigger Position     | Locations in a graph (subgraph) where a trigger  is inserted                          | `--trigger_position`    | `random`      | `random`,`degree`,`cluster`       |
+|        | Poisoning Rate       | Percentage of training data that has been  poisoned                                   | `--poisoning_intensity` | `0.1`         | `0.1`, `0.2`, `0.3`, `0.4`,`0.5` |
+
+Other paramaters
+
+- **Model**: `GCN`, `GAT`, `GraphSAGE`
+- **Dataset**: Molecules: `AIDS`,`NCI1` Bioinformatics: `PROTEINS_full`,`DD`, `ENZYMES`  Synthetic:  `COLORS-3`
+- **Optimizer**: Adam with default hyperparameters
+- **Total epoch**: `1000`
+- **Batch size**: `128`
+- **Learning rate**: `7e-4`
+
+####  Train a clean Federated GNN model
+```
+python run_clean_graph_exps.py --dataset NCI1 \
+                         --config ./Graph_level_Models/configs/TUS/TUs_graph_classification_GCN_NCI1_100k.json \
+                         --is_iid iid\
+                         --num_workers 5\
+
+```
+
+
+####  Backdoor attack  in Federated GNNs
+running command for training:
+```python
+python run_graph_exps.py --dataset NCI1 \
+                         --config ./Graph_level_Models/configs/TUS/TUs_graph_classification_GCN_NCI1_100k.json \
+                         --is_iid iid\
+                         --num_workers 5\
+                         --num_mali 1\
+                         --epoch_backdoor 0\
+                         --frac_of_avg 0.1\
+                         --trigger_type renyi\
+                         --trigger_position random\
+                         --poisoning_intensity 0.1\
+                         --filename ./checkpoints/Graph \
+                         --device_id 0
+```
+
 > Each experiment was repeated 5 times with a different seed each time
 
 
