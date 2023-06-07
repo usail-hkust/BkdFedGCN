@@ -39,6 +39,17 @@ We consider the most widely studied setting:
 - **The global model is trained using a federated learning approach, where multiple clients train the model collaboratively**.
 - **The adversary has access to a subset of clients and can inject poisoned local datasets on these clients**.
 
+### Attack Objective: 
+- Assuming there are a total of $K$ clients, with $M$ ($M \leq K$) of them being malicious, each malicious attacker independently conducts the backdoor attack on their own models.  The primary goal of a backdoor attack is to manipulate the model in such a way that it misclassifies specific pre-defined labels (known as target labels) only within the poisoned data samples. It is important to ensure that the model's accuracy remains unaffected when processing clean data. 
+
+### Attack Knowledge: 
+- In this setting, we assume that the malicious attacker has complete knowledge of their own training data. They have the capability to generate triggers. It should be noted that this scenario is quite practical since the clients have full control over their own data. 
+
+### Attacker Capability: 
+
+The malicious client has the ability to inject triggers into the training datasets, but this capability is limited within predetermined constraints such as trigger size and poisoned data rate. The intention is to contaminate the training datasets. However, the malicious client lacks the ability to manipulate the server-side aggregation process or interfere with other clients' training processes and models.
+
+
 
 ## Dataset
 We consider the most widely studied datasets:
