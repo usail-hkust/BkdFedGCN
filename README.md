@@ -1,4 +1,4 @@
-# Bkd-FedGNN: A Benchmark for Classification Backdoor Attacks on Federated Graph Neural Networks
+# Bkd-FedGNN: A Benchmark for Classification Backdoor Attacks on Federated Graph Neural Networks [[pdf](https://www.researchgate.net/publication/371671821_Bkd-FedGNN_A_Benchmark_for_Classification_Backdoor_Attacks_on_Federated_Graph_Neural_Network)]
 
 This study presents a benchmark analysis of the impact of multi-component backdoor attacks on federated graph learning for both node and graph classification tasks. The aim is to explore the effects of these attacks on various components of the learning process and provide insights into their potential impact on model performance.
 
