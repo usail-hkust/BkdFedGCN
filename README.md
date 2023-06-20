@@ -38,7 +38,7 @@ The malicious client has the ability to inject triggers into the training datase
 ## Dataset
 We consider the most widely studied datasets:
 - **Node level:** `Cora`, `Citeseer`, `CS`,`Physics`, `Photo`, `Computers`
-- **Graph level:** Molecules: `AIDS`,`NCI1` Bioinformatics: `PROTEINS_full`,`DD`, `ENZYMES`  Synthetic: `TRIANGLES`
+- **Graph level:** Molecules: `AIDS`,`NCI1` Bioinformatics: `PROTEINS_full`,`DD`, `ENZYMES`  Synthetic: `COLORS-3`
 
 
 ## GCN Model
