@@ -196,13 +196,18 @@ and/or our related works
 
 
 ```bib
-@inproceedings{fan2022ASTFA,
- author =  {Fan LIU, Hao LIU, Wenzhao JIANG},
- title = {Practical Adversarial Attacks on Spatiotemporal
-Traffic Forecasting Models},
- booktitle = {In Proceedings of the Thirty-sixth Annual Conference on Neural Information Processing Systems (NeurIPS)},
+@inproceedings{fan2022AdvST,
+ author = {LIU, Fan and Liu, Hao and Jiang, Wenzhao},
+ booktitle = {Advances in Neural Information Processing Systems},
+ pages = {19035--19047},
+ publisher = {Curran Associates, Inc.},
+ title = {Practical Adversarial Attacks on Spatiotemporal Traffic Forecasting Models},
+ url = {https://proceedings.neurips.cc/paper_files/paper/2022/file/79081c95482707d2db390542614e29cd-Paper-Conference.pdf},
+ volume = {35},
  year = {2022}
- }
+}
+
+
 ```
 
 
