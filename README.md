@@ -174,6 +174,7 @@ If you find the code useful for your research, please consider citing
   publisher = {Arxiv},
   year      = {2023},
   timestamp = {}
+}
 ```
 
 and/or our related works
@@ -190,6 +191,7 @@ and/or our related works
   publisher = {{ACM}},
   year      = {2023},
   timestamp = {}
+}
 ```
 
 
