@@ -151,18 +151,13 @@ python run_graph_exps.py --dataset NCI1 \
 ## References
 If you find the code useful for your research, please consider citing
 ```bib
- @inproceedings{fan2023BkdFedGNN,
-  author    = {Fan LIU and
-               Siqi LAI and
-               Yansong NING and 
-               Hao LIU},
-  title     = {Bkd-FedGNN: A Benchmark for Classification Backdoor Attacks on Federated Graph Neural Network},
-  booktitle = {Arxiv},
-  pages     = {},
-  doi       = {10.13140/RG.2.2.34558.15681},
-  publisher = {Arxiv},
-  year      = {2023},
-  timestamp = {}
+@misc{liu2023bkdfedgnn,
+      title={Bkd-FedGNN: A Benchmark for Classification Backdoor Attacks on Federated Graph Neural Network}, 
+      author={Fan Liu and Siqi Lai and Yansong Ning and Hao Liu},
+      year={2023},
+      eprint={2306.10351},
+      archivePrefix={arXiv},
+      primaryClass={cs.LG}
 }
 ```
 
