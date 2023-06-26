@@ -374,7 +374,7 @@ def main(args, logger):
     overall_malicious_train_flip_asr = []
     for i in range(args.num_workers):
         if i in rs:
-
+            idx_atk = client_idx_atk[i]
             induct_x, induct_edge_index, induct_edge_weights = Backdoor_model_list[i].inject_trigger(client_idx_atk[i], client_poison_x[i], client_induct_edge_index[i],
                                                                                     client_induct_edge_weights[i], device)
 
@@ -409,6 +409,7 @@ def main(args, logger):
     else:
         for i in range(args.num_mali):
             for j in range(args.num_workers - args.num_mali):
+                idx_atk = client_idx_atk[i]
                 induct_x, induct_edge_index, induct_edge_weights = Backdoor_model_list[i].inject_trigger(
                     client_idx_atk[i], client_poison_x[i], client_induct_edge_index[i],
                     client_induct_edge_weights[i], device)
