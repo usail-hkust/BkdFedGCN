@@ -16,7 +16,8 @@ from helpers.split_graph_utils import split_Random, split_Louvain
 from Node_level_Models.models.construct import model_construct
 from Node_level_Models.helpers.func_utils import prune_unrelated_edge,prune_unrelated_edge_isolated
 import  random
-from Node_level_Models.data.data import  ogba_arxiv_data,Amazon_data,Coauthor_data
+from Node_level_Models.data.data import  ogba_data,Amazon_data,Coauthor_data
+from torch_geometric.utils import scatter
 def main(args, logger):
     np.random.seed(args.seed)
     torch.manual_seed(args.seed)
@@ -51,6 +52,15 @@ def main(args, logger):
         from ogb.nodeproppred import PygNodePropPredDataset
         # Download and process data at './dataset/ogbg_molhiv/'
         dataset = PygNodePropPredDataset(name='ogbn-arxiv', root='./data/')
+    elif (args.dataset == 'ogbn-products'):
+        from ogb.nodeproppred import PygNodePropPredDataset
+        # Download and process data at './dataset/ogbg_molhiv/'
+        dataset = PygNodePropPredDataset(name='ogbn-products', root='./data/')
+    elif (args.dataset == 'ogbn-proteins'):
+        from ogb.nodeproppred import PygNodePropPredDataset
+        # Download and process data at './dataset/ogbg_molhiv/'
+        dataset = PygNodePropPredDataset(name='ogbn-proteins', root='./data/')
+
     elif (args.dataset in Coauthor_list):
         dataset = Coauthor(root='./data/',name =args.dataset,  \
                           transform=T.NormalizeFeatures())
@@ -66,9 +76,10 @@ def main(args, logger):
     print(f'Number of features: {dataset.num_features}')
     print(f'Number of classes: {dataset.num_classes}')
 
+    ogbn_data_list = ["ogbn-arxiv",'ogbn-products','ogbn-proteins']
+    if args.dataset in ogbn_data_list:
+        data = ogba_data(dataset)
 
-    if args.dataset == "ogbn-arxiv":
-        data = ogba_arxiv_data(dataset)
     elif args.dataset in Amazon_list:
         data = Amazon_data(dataset)
         data.y = data.y.to(dtype=torch.long)
@@ -76,8 +87,16 @@ def main(args, logger):
         data = Coauthor_data(dataset)
     else:
         data = dataset[0]  # Get the graph object.
+    if args.dataset == 'ogbn-proteins':
+        # Initialize features of nodes by aggregating edge features.
+        row, col = data.edge_index
+        data.x = scatter(data.edge_attr, col, dim_size=data.num_nodes, reduce='sum')
+        _, f_dim = data.x.size()
+        print(f'ogbn-proteins Number of features: {f_dim}')
+        print("data.y = data.y.to(torch.float)", data.y.shape)
     args.avg_degree = data.num_edges / data.num_nodes
-
+    nclass = int(data.y.max() + 1)
+    print("class", int(data.y.max() + 1))
     print('==============================================================')
 
     # Gather some statistics about the graph.
@@ -229,11 +248,11 @@ def main(args, logger):
     # Initialize clients
     model_list = []
     for i in range(args.num_workers):
-        test_model = model_construct(args, args.model, data, device).to(device)
+        test_model = model_construct(args, args.model, data, device,nclass).to(device)
         model_list.append(test_model)
 
     # Initialize the sever model
-    severe_model = model_construct(args, args.model, data, device).to(device)
+    severe_model = model_construct(args, args.model, data, device,nclass).to(device)
 
     random.seed(args.seed)
     #rs = random.sample(range(0,args.num_clients),args.num_malicious)
