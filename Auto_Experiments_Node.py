@@ -21,10 +21,10 @@ filename = os.path.join(dirname, 'run_node_exps.py')
 #                          --epochs 20
 
 
-Model_list = ["GCN"]
-# Model_list = ["GAT"]#,
+#Model_list = ["GCN"]
+Model_list = ["GAT"]#,
 # Model_list = ["GraphSage"]
-dataset = "Physics"
+dataset = "Yelp"
 trigger_size_list = [4,5,6,7,8,9,10]
 IID_list = ["iid", "non-iid-louvain"]
 trigger_type_list = ["renyi","ws", "ba", "gta","ugba"]
@@ -47,7 +47,7 @@ if dataset  in Amazon_list:
     epochs = 2000
 if dataset  in Coauthor_list:
     epochs = 1000
-
+epochs = 2000
 Current_exp_name = "poisoning_intensity"
 
 Experiment_list = ["iid","num_mali","epoch_backdoor","overlapping_rate","trigger_size","trigger_type","trigger_position","poisoning_intensity"]

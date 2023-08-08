@@ -357,6 +357,8 @@ def main(args, logger):
             # print("accuracy on clean test nodes: {:.4f}".format(clean_acc))
 
             # Server Aggregation
+
+            # Aggregation methods
             Sub_model_list = random.sample(model_list, args.num_sample_submodels)
             for param_tensor in Sub_model_list[0].state_dict():
                 avg = (sum(c.state_dict()[param_tensor] for c in Sub_model_list)) / len(Sub_model_list)
@@ -428,7 +430,7 @@ def main(args, logger):
     print("Average Performance on clean test set: {:.4f}".format(np.array(overall_performance).sum() / args.num_workers))
     average_overall_performance =  np.array(overall_performance).sum() / args.num_workers
     average_ASR = np.array(overall_malicious_train_attach_rate).sum() / args.num_mali
-    average_Flip_ASR = np.array(overall_performance).sum() / args.num_workers
+    average_Flip_ASR = np.array(overall_performance).sum()/ args.num_workers
     return average_overall_performance, average_ASR, average_Flip_ASR, average_transfer_attack_success_rate
 
 if __name__ == '__main__':

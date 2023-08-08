@@ -78,6 +78,6 @@ def args_parser():
     parser.add_argument("--is_iid", type=str, default="iid", choices=["iid", "non-iid-louvain"],
                         help="split the graph into the clients: random is randomly split, louvain is the community detection method")
     parser.add_argument('--epoch_backdoor', type=float, default= 0.0, choices=[0.0,0.05,0.1,0.2,0.3,0.4,0.5], help='from which epoch the malicious clients start backdoor attack')
-    parser.add_argument('--proj_name', type=str, default="BkdFedGCN-Node-Inductive", help='wandb logger project name')
+    parser.add_argument('--proj_name', type=str, default="BkdFedGCN-rebuttal", help='wandb logger project name')
     args = parser.parse_args()
     return args
