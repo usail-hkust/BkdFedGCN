@@ -16,7 +16,7 @@ def args_parser():
     parser.add_argument('--dataset', type=str, default='Cora',
                         help='Dataset',
                         choices=['Cora', 'Citeseer', 'Pubmed', 'Flickr', 'ogbn-arxiv', 'Reddit', 'Reddit2',
-                                 'Yelp',"Cs","Physics","computers","photo"])
+                                 'Yelp',"Cs","Physics","computers","photo",'ogbn-products','ogbn-proteins'])
     parser.add_argument('--train_lr', type=float, default=0.01,
                         help='Initial learning rate.')
     parser.add_argument('--weight_decay', type=float, default=5e-4,
@@ -79,5 +79,10 @@ def args_parser():
                         help="split the graph into the clients: random is randomly split, louvain is the community detection method")
     parser.add_argument('--epoch_backdoor', type=float, default= 0.0, choices=[0.0,0.05,0.1,0.2,0.3,0.4,0.5], help='from which epoch the malicious clients start backdoor attack')
     parser.add_argument('--proj_name', type=str, default="BkdFedGCN-rebuttal", help='wandb logger project name')
+    # semi-settings
+    parser.add_argument('--ratio_training', type=float, default=0.4, help='labels of ratio of training')
+    parser.add_argument('--ratio_val', type=float, default=0.1, help='labels of ratio of val')
+    parser.add_argument('--ratio_testing', type=float, default=0.2, help='labels of ratio of testing')
+
     args = parser.parse_args()
     return args

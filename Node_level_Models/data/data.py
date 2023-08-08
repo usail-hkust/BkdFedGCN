@@ -11,7 +11,7 @@ import numpy as np
 
 
 
-def ogba_arxiv_data(dataset):
+def ogba_data(dataset):
     split_idx = dataset.get_idx_split()
     train_idx, val_idx, test_idx = split_idx["train"], split_idx["valid"], split_idx["test"]
     graph = dataset[0]

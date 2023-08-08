@@ -7,7 +7,7 @@ from Node_level_Models.models.GNNGuard import GNNGuard
 from Node_level_Models.models.MedianGCN import MedianGCN
 from Node_level_Models.models.RobustGCN import RobustGCN
 
-def model_construct(args,model_name,data,device):
+def model_construct(args,model_name,data,device,nclass):
     if(args.dataset == 'Reddit2'):
         use_ln = True
         layer_norm_first = False
@@ -15,10 +15,10 @@ def model_construct(args,model_name,data,device):
         use_ln = False
         layer_norm_first = False
 
-    if args.dataset == "computers":
-        nclass = 10
-    else:
-        nclass = int(data.y.max() + 1)
+    # if args.dataset == "computers":
+    #     nclass = 10
+    # else:
+    #     nclass = int(data.y.max() + 1)
 
     if (model_name == 'GCN'):
 
