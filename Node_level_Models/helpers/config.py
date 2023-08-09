@@ -11,9 +11,9 @@ def args_parser():
     parser.add_argument("--inner_epochs", type=int, default=1, help="epochs for training")
     parser.add_argument('--device_id', type=int, default=0,  # ["iid","non-iid"]
                         help='device id')
-    parser.add_argument('--model', type=str, default='GCN', help='model',
+    parser.add_argument('--model', type=str, default='GraphSage', help='model',
                         choices=['GCN', 'GAT', 'GraphSage', 'GIN'])
-    parser.add_argument('--dataset', type=str, default='Cora',
+    parser.add_argument('--dataset', type=str, default='Reddit',
                         help='Dataset',
                         choices=['Cora', 'Citeseer', 'Pubmed', 'Flickr', 'ogbn-arxiv', 'Reddit', 'Reddit2',
                                  'Yelp',"Cs","Physics","computers","photo",'ogbn-products','ogbn-proteins'])
@@ -80,7 +80,7 @@ def args_parser():
     parser.add_argument('--epoch_backdoor', type=float, default= 0.0, choices=[0.0,0.05,0.1,0.2,0.3,0.4,0.5], help='from which epoch the malicious clients start backdoor attack')
     parser.add_argument('--proj_name', type=str, default="BkdFedGCN-rebuttal", help='wandb logger project name')
     # semi-settings
-    parser.add_argument('--ratio_training', type=float, default=0.4, help='labels of ratio of training')
+    parser.add_argument('--ratio_training', type=float, default=0.2, help='labels of ratio of training')
     parser.add_argument('--ratio_val', type=float, default=0.1, help='labels of ratio of val')
     parser.add_argument('--ratio_testing', type=float, default=0.2, help='labels of ratio of testing')
     #other federated algoritm  settings

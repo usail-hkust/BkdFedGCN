@@ -86,6 +86,7 @@ def main(args, logger):
         data.y = data.y.to(dtype=torch.long)
     elif args.dataset in Coauthor_list:
         data = Coauthor_data(dataset)
+
     else:
         data = dataset[0]  # Get the graph object.
     if args.dataset == 'ogbn-proteins':
@@ -95,10 +96,13 @@ def main(args, logger):
         _, f_dim = data.x.size()
         print(f'ogbn-proteins Number of features: {f_dim}')
         print("data.y = data.y.to(torch.float)", data.y.shape)
+    if args.dataset == 'Reddit':
+        data.y = data.y.long()
     args.avg_degree = data.num_edges / data.num_nodes
     nclass = int(data.y.max() + 1)
     print("class", int(data.y.max() + 1))
     print('==============================================================')
+
 
     # Gather some statistics about the graph.
     print(f'Number of nodes: {data.num_nodes}')

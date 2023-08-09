@@ -47,7 +47,7 @@ class GraphSage(nn.Module):
         
         return x
 
-    def fit(self, global_model,features, edge_index, edge_weight, labels,args,idx_train, idx_val=None, train_iters=200, verbose=False):
+    def fit(self, global_model,features, edge_index, edge_weight, labels,idx_train, args,idx_val=None, train_iters=200, verbose=False):
         """Train the gcn model, when idx_val is not None, pick the best model according to the validation loss.
         Parameters
         ----------
@@ -85,6 +85,7 @@ class GraphSage(nn.Module):
         for i in range(train_iters):
             optimizer.zero_grad()
             output = self.forward(self.features, self.edge_index, self.edge_weight)
+            print("idx_train",idx_train)
             loss_train = F.nll_loss(output[idx_train], labels[idx_train])
             loss_train.backward()
             optimizer.step()
@@ -95,7 +96,7 @@ class GraphSage(nn.Module):
         output = self.forward(self.features, self.edge_index, self.edge_weight)
         self.output = output
 
-    def _train_with_val(self,global_model, labels, idx_train, idx_val, train_iters, verbose,args):
+    def _train_with_val(self,global_model, labels, idx_train, idx_val, train_iters, verbose, args):
         if verbose:
             print('=== training gcn model ===')
         optimizer = optim.Adam(self.parameters(), lr=self.lr, weight_decay=self.weight_decay)
