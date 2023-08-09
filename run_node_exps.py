@@ -35,6 +35,8 @@ def main(args):
     metric_list = []
     if args.agg_method == "scaffold":
         from backdoor_node_clf_scaffold import main as backdoor_main
+    else:
+        from backdoor_node_clf import main as backdoor_main
 
     for i in range(len(seeds)):
         args.seed = seeds[i]
