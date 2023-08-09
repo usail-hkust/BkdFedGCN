@@ -119,7 +119,7 @@ class GAT(nn.Module):
         optimizer = optim.Adam(self.parameters(), lr=self.lr, weight_decay=self.weight_decay)
 
         best_loss_val = 100
-        best_acc_val = 0
+        best_acc_val = -10
 
         for i in range(train_iters):
             self.train()
