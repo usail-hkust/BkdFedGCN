@@ -84,7 +84,7 @@ def args_parser():
     parser.add_argument('--ratio_val', type=float, default=0.1, help='labels of ratio of val')
     parser.add_argument('--ratio_testing', type=float, default=0.2, help='labels of ratio of testing')
     #other federated algoritm  settings
-    parser.add_argument('--agg_method', type=str, default="FedAvg",choices= ["FedAvg","FedOpt", "FedProx","scaffold"]
+    parser.add_argument('--agg_method', type=str, default="FedAvg",choices= ["FedAvg","FedOpt", "FedProx","scaffold"],
                         help='Federated Algorithms')
     parser.add_argument('--mu', type=float, default=0.01, help='proximal term constant')
     parser.add_argument('--glo_optimizer', type=str, default="Adam", help='the optimizer of global model in FedOPT')
