@@ -11,7 +11,6 @@ import scipy.sparse as sp
 from torch_geometric.utils import from_scipy_sparse_matrix
 
 class GCN(nn.Module):
-
     def __init__(self, nfeat, nhid, nclass, dropout=0.5, lr=0.01, weight_decay=5e-4, layer=2,device=None,layer_norm_first=False,use_ln=False):
 
         super(GCN, self).__init__()
@@ -62,7 +61,7 @@ class GCN(nn.Module):
         
         return x
 
-    def fit(self, features, edge_index, edge_weight, labels, idx_train, idx_val=None, train_iters=200, verbose=False):
+    def fit(self, global_model, features, edge_index, edge_weight, labels, idx_train, args, idx_val=None, train_iters=200, verbose=False):
         """Train the gcn model, when idx_val is not None, pick the best model according to the validation loss.
         Parameters
         ----------
@@ -91,7 +90,7 @@ class GCN(nn.Module):
         if idx_val is None:
             self._train_without_val(self.labels, idx_train, train_iters, verbose)
         else:
-            loss_train, loss_val, acc_train, acc_val = self._train_with_val(self.labels, idx_train, idx_val, train_iters, verbose)
+            loss_train, loss_val, acc_train, acc_val = self._train_with_val(global_model,self.labels, idx_train, idx_val, train_iters, verbose,args)
         return  loss_train, loss_val, acc_train, acc_val
 
     def _train_without_val(self, labels, idx_train, train_iters, verbose):
@@ -114,13 +113,13 @@ class GCN(nn.Module):
         self.output = output
         # torch.cuda.empty_cache()
 
-    def _train_with_val(self, labels, idx_train, idx_val, train_iters, verbose):
+    def _train_with_val(self,global_model,labels, idx_train, idx_val, train_iters, verbose,args):
         if verbose:
             print('=== training gcn model ===')
         optimizer = optim.Adam(self.parameters(), lr=self.lr, weight_decay=self.weight_decay)
 
         best_loss_val = 100
-        best_acc_val = 0
+        best_acc_val = -10
 
         for i in range(train_iters):
             self.train()
@@ -128,6 +127,14 @@ class GCN(nn.Module):
 
             output = self.forward(self.features, self.edge_index, self.edge_weight)
             loss_train = F.nll_loss(output[idx_train], labels[idx_train])
+
+            if args.agg_method == "FedProx":
+                # compute proximal_term
+                proximal_term = 0.0
+                for w, w_t in zip(self.parameters(), global_model.parameters()):
+                    proximal_term += (w - w_t).norm(2)
+
+                loss_train = loss_train + (args.mu / 2) * proximal_term
 
 
 

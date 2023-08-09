@@ -18,7 +18,39 @@ from Node_level_Models.helpers.func_utils import prune_unrelated_edge,prune_unre
 import  random
 from Node_level_Models.data.data import  ogba_data,Amazon_data,Coauthor_data
 from torch_geometric.utils import scatter
-from Node_level_Models.aggregators.aggregation import fed_avg, fed_opt
+import copy
+from Node_level_Models.aggregators.aggregation import scaffold,init_control
+def update_global(global_model, delta_models,args):
+    state_dict = {}
+
+    for name, param in global_model.state_dict().items():
+        vs = []
+        for client in delta_models.keys():
+            vs.append(delta_models[client][name])
+        vs = torch.stack(vs, dim=0)
+
+        try:
+            mean_value = vs.mean(dim=0)
+            vs = param - args.glo_lr * mean_value
+        except Exception:
+            # for BN's cnt
+            mean_value = (1.0 * vs).mean(dim=0).long()
+            vs = param - args.glo_lr * mean_value
+            vs = vs.long()
+
+        state_dict[name] = vs
+
+    global_model.load_state_dict(state_dict, strict=True)
+    return global_model
+def update_global_control(control, delta_controls):
+    new_control = copy.deepcopy(control)
+    for name, c in control.items():
+        mean_ci = []
+        for _, delta_control in delta_controls.items():
+            mean_ci.append(delta_control[name])
+        ci = torch.stack(mean_ci).mean(dim=0)
+        new_control[name] = c - ci
+    return new_control
 def main(args, logger):
     np.random.seed(args.seed)
     torch.manual_seed(args.seed)
@@ -253,7 +285,7 @@ def main(args, logger):
         model_list.append(test_model)
 
     # Initialize the sever model
-    severe_model = model_construct(args, args.model, data, device,nclass).to(device)
+    global_model = model_construct(args, args.model, data, device,nclass).to(device)
 
     random.seed(args.seed)
     #rs = random.sample(range(0,args.num_clients),args.num_malicious)
@@ -264,6 +296,16 @@ def main(args, logger):
     print("rs",rs)
     args.epoch_backdoor = int(args.epoch_backdoor * args.epochs)
     print('======================Start Training Model========================================')
+
+
+    # control variates
+    server_control = init_control(global_model, device)
+
+    client_controls = {
+        id: init_control(global_model, device)
+        for id, client in enumerate(model_list)
+    }
+    #print(" client",client_controls)
     for epoch in range(args.epochs):
         client_induct_edge_index = []
         client_induct_edge_weights = []
@@ -273,20 +315,29 @@ def main(args, logger):
         for i in range(args.num_workers):
             worker_results[f"client_{i}"] = {"train_loss": None, "train_acc": None, "val_loss": None, "val_acc": None}
 
+        delta_models = {}
+        delta_controls = {}
         if epoch >= args.epoch_backdoor:
             for j in range(args.num_workers):
                 if j in rs:
-                    loss_train, loss_val, acc_train, acc_val = model_list[j].fit(severe_model,client_poison_x[j].to(device),
-                                                                                 client_poison_edge_index[j].to(device),
-                                                                                 client_poison_edge_weights[j].to(device),
-                                                                                 client_poison_labels[j].to(device),
-                                                                                 client_bkd_tn_nodes[j].to(device),
-                                                                                 args,
-                                                                                 client_idx_val[j].to(device),
-                                                                                 train_iters=args.inner_epochs, verbose=False)
+                    loss_train, loss_val, acc_train, acc_val,\
+                    client_control, delta_control, delta_model = scaffold(global_model,
+                                                                          server_control,
+                                                                          client_controls[j],
+                                                                          model = model_list[j],
+                                                                          features = client_poison_x[j].to(device),
+                                                                          edge_index = client_poison_edge_index[j].to(device),
+                                                                          edge_weight = client_poison_edge_weights[j].to(device),
+                                                                          labels = client_poison_labels[j].to(device),
+                                                                          idx_train = client_bkd_tn_nodes[j].to(device),
+                                                                          args = args,
+                                                                          idx_val=client_idx_val[j].to(device),
+                                                                          train_iters=args.inner_epochs)
 
-                    # output = model_list[j](client_poison_x[j].to(device), client_poison_edge_index[j].to(device), client_poison_edge_weights[j].to(device))
-                    # train_attach_rate = (output.argmax(dim=1)[idx_attach] == args.target_class).float().mean()
+                    client_controls[j] = copy.deepcopy(client_control)
+                    delta_models[j] = copy.deepcopy(delta_model)
+                    delta_controls[j] = copy.deepcopy(delta_control)
+
                     print("Malicious client: {} ,Acc train: {:.4f}, Acc val: {:.4f}".format(j,acc_train,acc_val))
 
                     induct_edge_index = torch.cat([client_poison_edge_index[j].to(device), client_mask_edge_index[j].to(device)], dim=1)
@@ -300,23 +351,31 @@ def main(args, logger):
                 else:
                     #client_train_edge_index
                     train_edge_weights = torch.ones([client_train_edge_index[j].shape[1]]).to(device)
-                    loss_train, loss_val, acc_train, acc_val = model_list[j].fit(severe_model,client_data[j].x.to(device),
-                                                                                 client_train_edge_index[j].to(device),
-                                                                                 train_edge_weights.to(device),
-                                                                                 client_data[j].y.to(device),
-                                                                                 client_idx_train[j].to(device),
-                                                                                 args,
-                                                                                 client_idx_val[j].to(device),
-                                                                                 train_iters=args.inner_epochs,
-                                                                                 verbose=False)
+
+
+                    loss_train, loss_val, acc_train, acc_val,\
+                    client_control, delta_control, delta_model = scaffold(global_model,
+                                                                          server_control,
+                                                                          client_controls[j],
+                                                                          model = model_list[j],
+                                                                          features = client_data[j].x.to(device),
+                                                                          edge_index = client_train_edge_index[j].to(device),
+                                                                          edge_weight = train_edge_weights.to(device),
+                                                                          labels = client_data[j].y.to(device),
+                                                                          idx_train = client_idx_train[j].to(device),
+                                                                          args = args,
+                                                                          idx_val= client_idx_val[j].to(device),
+                                                                          train_iters=args.inner_epochs)
+
+                    client_controls[j] = copy.deepcopy(client_control)
+                    delta_models[j] = copy.deepcopy(delta_model)
+                    delta_controls[j] = copy.deepcopy(delta_control)
+
 
                     print("Clean client: {} ,Acc train: {:.4f}, Acc val: {:.4f}".format(j, acc_train, acc_val))
 
 
                     induct_x, induct_edge_index, induct_edge_weights = client_data[j].x, client_data[j].edge_index, client_data[j].edge_weight
-                    # clean_acc = model_list[j].test(client_data[j].x.to(device), client_data[j].edge_index.to(device),
-                    #                                client_data[j].edge_weight.to(device), client_data[j].y.to(device),
-                    #                                client_idx_clean_test[j].to(device))
 
                 # save worker results
                 for ele in worker_results[f"client_{j}"]:
@@ -338,15 +397,33 @@ def main(args, logger):
             for j in range(args.num_workers):
 
                 train_edge_weights = torch.ones([client_train_edge_index[j].shape[1]]).to(device)
-                loss_train, loss_val, acc_train, acc_val = model_list[j].fit(severe_model,client_data[j].x.to(device),
-                                                                             client_train_edge_index[j].to(device),
-                                                                             train_edge_weights.to(device),
-                                                                             client_data[j].y.to(device),
-                                                                             client_idx_train[j].to(device),
-                                                                             args,
-                                                                             client_idx_val[j].to(device),
-                                                                             train_iters=args.inner_epochs,
-                                                                             verbose=False)
+
+                loss_train, loss_val, acc_train, acc_val, \
+                client_control, delta_control, delta_model = scaffold(global_model,
+                                                                      server_control,
+                                                                      client_controls[j],
+                                                                      model=model_list[j],
+                                                                      features=client_data[j].x.to(device),
+                                                                      edge_index=client_train_edge_index[j].to(device),
+                                                                      edge_weight=train_edge_weights.to(device),
+                                                                      labels=client_data[j].y.to(device),
+                                                                      idx_train=client_idx_train[j].to(device),
+                                                                      args=args,
+                                                                      idx_val=client_idx_val[j].to(device),
+                                                                      train_iters=args.inner_epochs)
+
+                client_controls[j] = copy.deepcopy(client_control)
+                delta_models[j] = copy.deepcopy(delta_model)
+                delta_controls[j] = copy.deepcopy(delta_control)
+
+
+
+
+
+
+
+
+
                 print("Clean client: {} ,Acc train: {:.4f}, Acc val: {:.4f}".format(j, acc_train, acc_val))
                 induct_x, induct_edge_index, induct_edge_weights = client_data[j].x, client_data[j].edge_index, client_data[j].edge_weight
                 # clean_acc = model_list[j].test(client_data[j].x.to(device), client_data[j].edge_index.to(device),
@@ -370,32 +447,13 @@ def main(args, logger):
             # wandb logger
             logger.log(worker_results)
 
-            # print("accuracy on clean test nodes: {:.4f}".format(clean_acc))
 
-            # Server Aggregation
-
-            # # Aggregation methods
-            # Sub_model_list = random.sample(model_list, args.num_sample_submodels)
-            # for param_tensor in Sub_model_list[0].state_dict():
-            #     avg = (sum(c.state_dict()[param_tensor] for c in Sub_model_list)) / len(Sub_model_list)
-            #     # Update the global
-            #     severe_model.state_dict()[param_tensor].copy_(avg)
-
-        if args.agg_method == "FedAvg":
-            global_model = fed_avg(severe_model,model_list,args)
-        elif args.agg_method == "FedOpt":
-            # Adaptive federated optimization.
-            global_model = fed_opt(severe_model, model_list, args)
-        elif args.agg_method == "FedProx":
-             # the aggregation is same with the FedAvg and the local model add the regularization
-            global_model = fed_avg(severe_model,model_list,args)
-        else:
-            raise NameError
-        # send to local model
-        for param_tensor in global_model.state_dict():
-            avg = global_model.state_dict()[param_tensor]
-            for cl in model_list:
-                cl.state_dict()[param_tensor].copy_(avg)
+        global_model = update_global(global_model, delta_models, args)
+        new_control = update_global_control(
+            control=server_control,
+            delta_controls=delta_controls,
+        )
+        server_control = copy.deepcopy(new_control)
 
     overall_performance = []
     overall_malicious_train_attach_rate = []

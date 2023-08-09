@@ -83,6 +83,13 @@ def args_parser():
     parser.add_argument('--ratio_training', type=float, default=0.4, help='labels of ratio of training')
     parser.add_argument('--ratio_val', type=float, default=0.1, help='labels of ratio of val')
     parser.add_argument('--ratio_testing', type=float, default=0.2, help='labels of ratio of testing')
-
+    #other federated algoritm  settings
+    parser.add_argument('--agg_method', type=str, default="FedAvg",choices= ["FedAvg","FedOpt", "FedProx","scaffold"]
+                        help='Federated Algorithms')
+    parser.add_argument('--mu', type=float, default=0.01, help='proximal term constant')
+    parser.add_argument('--glo_optimizer', type=str, default="Adam", help='the optimizer of global model in FedOPT')
+    parser.add_argument('--glo_lr', type=float, default=3e-4, help='the learning rate  of global model in FedOPT')
+    parser.add_argument('--max_grad_norm', type=float, default=100.0, help='max grad norm')
+    parser.add_argument('--scal_lr', type=float, default=0.01, help='the learning rate  of global model in FedOPT')
     args = parser.parse_args()
     return args

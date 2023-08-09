@@ -113,7 +113,7 @@ class GAT(nn.Module):
         output = self.forward(self.features, self.edge_index, self.edge_weight)
         self.output = output
 
-    def _train_with_val(self, labels, idx_train, idx_val, train_iters, verbose):
+    def _train_with_val(self, global_model,labels, idx_train, idx_val, train_iters, verbose, args):
         if verbose:
             print('=== training gcn model ===')
         optimizer = optim.Adam(self.parameters(), lr=self.lr, weight_decay=self.weight_decay)
@@ -127,6 +127,15 @@ class GAT(nn.Module):
             output = self.forward(self.features, self.edge_index, self.edge_weight)
             #loss_train = F.nll_loss(output[idx_train], labels[idx_train])
             loss_train = F.cross_entropy(output[idx_train], labels[idx_train])
+            if args.agg_method == "FedProx":
+                # compute proximal_term
+                proximal_term = 0.0
+                for w, w_t in zip(self.parameters(), global_model.parameters()):
+                    proximal_term += (w - w_t).norm(2)
+
+                loss_train = loss_train + (args.mu / 2) * proximal_term
+
+
             loss_train.backward()
             optimizer.step()
 

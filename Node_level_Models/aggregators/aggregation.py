@@ -1,246 +1,261 @@
-import numpy as np
+import torch
+import  random
+
+import torch
+import torch.nn as nn
 import torch.nn.functional as F
-from torch_geometric.utils import to_dense_adj,dense_to_sparse
-import torch
-import scipy.sparse as sp
+import torch.optim as optim
+from Node_level_Models.helpers.func_utils import accuracy
+from copy import deepcopy
+from torch_geometric.nn import GCNConv
+import copy
 
-def edge_sim_analysis(edge_index, features):
-    sims = []
-    for (u,v) in edge_index:
-        sims.append(float(F.cosine_similarity(features[u].unsqueeze(0),features[v].unsqueeze(0))))
-    sims = np.array(sims)
-    # print(f"mean: {sims.mean()}, <0.1: {sum(sims<0.1)}/{sims.shape[0]}")
-    return sims
 
-def prune_unrelated_edge(args,edge_index,edge_weights,x,device,large_graph=True):
-    edge_index = edge_index[:,edge_weights>0.0].to(device)
-    edge_weights = edge_weights[edge_weights>0.0].to(device)
-    x = x.to(device)
-    # calculate edge simlarity
-    if(large_graph):
-        edge_sims = torch.tensor([],dtype=float).cpu()
-        N = edge_index.shape[1]
-        num_split = 100
-        N_split = int(N/num_split)
-        for i in range(num_split):
-            if(i == num_split-1):
-                edge_sim1 = F.cosine_similarity(x[edge_index[0][N_split * i:]],x[edge_index[1][N_split * i:]]).cpu()
-            else:
-                edge_sim1 = F.cosine_similarity(x[edge_index[0][N_split * i:N_split*(i+1)]],x[edge_index[1][N_split * i:N_split*(i+1)]]).cpu()
-            # print(edge_sim1)
-            edge_sim1 = edge_sim1.cpu()
-            edge_sims = torch.cat([edge_sims,edge_sim1])
-        # edge_sims = edge_sims.to(device)
+
+
+def fed_avg(severe_model,model_list,args):
+    Sub_model_list = random.sample(model_list, args.num_sample_submodels)
+    for param_tensor in Sub_model_list[0].state_dict():
+        avg = (sum(c.state_dict()[param_tensor] for c in Sub_model_list)) / len(Sub_model_list)
+        # Update the global
+        severe_model.state_dict()[param_tensor].copy_(avg)
+        # Send global to the local
+        # for cl in model_list:
+        #     cl.state_dict()[param_tensor].copy_(avg)
+    return severe_model
+def _initialize_global_optimizer(model, args):
+    # global optimizer
+    if args.glo_optimizer == "SGD":
+        # similar as FedAvgM
+        global_optimizer = torch.optim.SGD(
+            model.parameters(),
+            lr=args.glo_lr,
+            momentum=0.9,
+            weight_decay=0.0
+        )
+    elif args.glo_optimizer == "Adam":
+        global_optimizer = torch.optim.Adam(
+            model.parameters(),
+            lr=args.glo_lr,
+            betas=(0.9, 0.999),
+            weight_decay=0.0
+        )
     else:
-        edge_sims = F.cosine_similarity(x[edge_index[0]],x[edge_index[1]])
-    # find dissimilar edges and remote them
-    # update structure
-    updated_edge_index = edge_index[:,edge_sims>args.prune_thr]
-    updated_edge_weights = edge_weights[edge_sims>args.prune_thr]
-    return updated_edge_index,updated_edge_weights
+        raise ValueError("No such glo_optimizer: {}".format(
+            args.glo_optimizer
+        ))
+    return global_optimizer
+def fed_opt(global_model,model_list,args):
+    local_models = random.sample(model_list, args.num_sample_submodels)
+    global_optimizer = _initialize_global_optimizer(
+        model=global_model, args=args
+    )
+    mean_state_dict = {}
 
-def prune_unrelated_edge_isolated(args,edge_index,edge_weights,x,device,large_graph=True):
-    edge_index = edge_index[:,edge_weights>0.0].to(device)
-    edge_weights = edge_weights[edge_weights>0.0].to(device)
-    x = x.to(device)
-    # calculate edge simlarity
-    if(large_graph):
-        edge_sims = torch.tensor([],dtype=float).cpu()
-        N = edge_index.shape[1]
-        num_split = 100
-        N_split = int(N/num_split)
-        for i in range(num_split):
-            if(i == num_split-1):
-                edge_sim1 = F.cosine_similarity(x[edge_index[0][N_split * i:]],x[edge_index[1][N_split * i:]]).cpu()
-            else:
-                edge_sim1 = F.cosine_similarity(x[edge_index[0][N_split * i:N_split*(i+1)]],x[edge_index[1][N_split * i:N_split*(i+1)]]).cpu()
-            # print(edge_sim1)
-            edge_sim1 = edge_sim1.cpu()
-            edge_sims = torch.cat([edge_sims,edge_sim1])
-        # edge_sims = edge_sims.to(device)
-    else:
-        # calculate edge simlarity
-        edge_sims = F.cosine_similarity(x[edge_index[0]],x[edge_index[1]])
-    # find dissimilar edges and remote them
-    dissim_edges_index = np.where(edge_sims.cpu()<=args.prune_thr)[0]
-    edge_weights[dissim_edges_index] = 0
-    # select the nodes between dissimilar edgesy
-    dissim_edges = edge_index[:,dissim_edges_index]    # output: [[v_1,v_2],[u_1,u_2]]
-    dissim_nodes = torch.cat([dissim_edges[0],dissim_edges[1]]).tolist()
-    dissim_nodes = list(set(dissim_nodes))
-    # update structure
-    updated_edge_index = edge_index[:,edge_weights>0.0]
-    updated_edge_weights = edge_weights[edge_weights>0.0]
-    return updated_edge_index,updated_edge_weights,dissim_nodes
+    for name, param in global_model.state_dict().items():
+        vs = []
+        for id,client in enumerate(local_models):
+            vs.append(local_models[id].state_dict()[name])
+        vs = torch.stack(vs, dim=0)
 
-def select_target_nodes(args,seed,model,features,edge_index,edge_weights,labels,idx_val,idx_test):
-    test_ca,test_correct_index = model.test_with_correct_nodes(features,edge_index,edge_weights,labels,idx_test)
-    test_correct_index = test_correct_index.tolist()
-    '''select target test nodes'''
-    test_correct_nodes = idx_test[test_correct_index].tolist()
-    # filter out the test nodes that are not in target class
-    target_class_nodes_test = [int(nid) for nid in idx_test
-            if labels[nid]==args.target_class]
-    # get the target test nodes
-    idx_val,idx_test = idx_val.tolist(),idx_test.tolist()
-    rs = np.random.RandomState(seed)
-    cand_atk_test_nodes = list(set(test_correct_nodes) - set(target_class_nodes_test))  # the test nodes not in target class is candidate atk_test_nodes
-    atk_test_nodes = rs.choice(cand_atk_test_nodes, args.target_test_nodes_num)
-    '''select clean test nodes'''
-    cand_clean_test_nodes = list(set(idx_test) - set(atk_test_nodes))
-    clean_test_nodes = rs.choice(cand_clean_test_nodes, args.clean_test_nodes_num)
-    '''select poisoning nodes from unlabeled nodes (assign labels is easier than change, also we can try to select from labeled nodes)'''
-    N = features.shape[0]
-    cand_poi_train_nodes = list(set(idx_val)-set(atk_test_nodes)-set(clean_test_nodes))
-    poison_nodes_num = int(N * args.vs_ratio)
-    poi_train_nodes = rs.choice(cand_poi_train_nodes, poison_nodes_num)
+        try:
+            mean_value = vs.mean(dim=0)
+        except Exception:
+            # for BN's cnt
+            mean_value = (1.0 * vs).mean(dim=0).long()
+        mean_state_dict[name] = mean_value
 
-    return atk_test_nodes, clean_test_nodes,poi_train_nodes
+    # zero_grad
+    global_optimizer.zero_grad()
+    global_optimizer_state = global_optimizer.state_dict()
 
-def normalize(mx):
-    """Row-normalize sparse matrix"""
-    rowsum = np.array(mx.sum(1))
-    r_inv = np.power(rowsum, -1).flatten()
-    r_inv[np.isinf(r_inv)] = 0.
-    r_mat_inv = sp.diags(r_inv)
-    mx = r_mat_inv.dot(mx)
-    return mx
+    # new_model
+    new_model = copy.deepcopy(global_model)
+    new_model.load_state_dict(mean_state_dict, strict=True)
 
-def normalize_adj(adj):
-    """Symmetrically normalize adjacency matrix."""
-    adj = sp.coo_matrix(adj)
-    rowsum = np.array(adj.sum(1))
-    d_inv_sqrt = np.power(rowsum, -0.5).flatten()
-    d_inv_sqrt[np.isinf(d_inv_sqrt)] = 0.
-    d_mat_inv_sqrt = sp.diags(d_inv_sqrt)
-    return adj.dot(d_mat_inv_sqrt).transpose().dot(d_mat_inv_sqrt).tocsr()
+    # set global_model gradient
+    with torch.no_grad():
+        for param, new_param in zip(
+                global_model.parameters(), new_model.parameters()
+        ):
+            param.grad = param.data - new_param.data
 
-#%%
-import torch
-import numpy as np
+    # replace some non-parameters's state dict
+    state_dict = global_model.state_dict()
+    for name in dict(global_model.named_parameters()).keys():
+        mean_state_dict[name] = state_dict[name]
+    global_model.load_state_dict(mean_state_dict, strict=True)
 
-def tensor2onehot(labels):
-    """Convert label tensor to label onehot tensor.
-    Parameters
-    ----------
-    labels : torch.LongTensor
-        node labels
-    Returns
-    -------
-    torch.LongTensor
-        onehot labels tensor
+    # optimization
+    global_optimizer = _initialize_global_optimizer(
+        global_model, args
+    )
+    global_optimizer.load_state_dict(global_optimizer_state)
+    global_optimizer.step()
+
+    return global_model
+########################################################################
+def init_control(model,device):
+    """ a dict type: {name: params}
     """
-    labels = labels.long()
-    eye = torch.eye(labels.max() + 1)
-    onehot_mx = eye[labels]
-    return onehot_mx.to(labels.device)
-
-def accuracy(output, labels):
-    """Return accuracy of output compared to labels.
-    Parameters
-    ----------
-    output : torch.Tensor
-        output from model
-    labels : torch.Tensor or numpy.array
-        node labels
-    Returns
-    -------
-    float
-        accuracy
+    control = {
+        name: torch.zeros_like(
+            p.data
+        ).to(device) for name, p in model.state_dict().items()
+    }
+    return control
+def get_delta_model(model0, model1):
+    """ return a dict: {name: params}
     """
-    if not hasattr(labels, '__len__'):
-        labels = [labels]
-    if type(labels) is not torch.Tensor:
-        labels = torch.LongTensor(labels)
-    preds = output.max(1)[1].type_as(labels)
-    correct = preds.eq(labels).double()
-    correct = correct.sum()
-    return correct / len(labels)
-
-def sparse_mx_to_torch_sparse_tensor(sparse_mx):
-    """Convert a scipy sparse matrix to a torch sparse tensor."""
-    sparse_mx = sparse_mx.tocoo().astype(np.float32)
-    indices = torch.from_numpy(
-        np.vstack((sparse_mx.row, sparse_mx.col)).astype(np.int64))
-    values = torch.from_numpy(sparse_mx.data)
-    shape = torch.Size(sparse_mx.shape)
-    return torch.sparse.FloatTensor(indices, values, shape)
-
-def idx_to_mask(indices, n):
-    mask = torch.zeros(n, dtype=torch.bool)
-    mask[indices] = True
-    return mask
-import scipy.sparse as sp
-def sys_normalized_adjacency(adj):
-   adj = sp.coo_matrix(adj)
-   adj = adj + sp.eye(adj.shape[0])
-   row_sum = np.array(adj.sum(1))
-   row_sum=(row_sum==0)*1+row_sum
-   d_inv_sqrt = np.power(row_sum, -0.5).flatten()
-   d_inv_sqrt[np.isinf(d_inv_sqrt)] = 0.
-   d_mat_inv_sqrt = sp.diags(d_inv_sqrt)
-   return d_mat_inv_sqrt.dot(adj).dot(d_mat_inv_sqrt).tocoo()
-# %%
-def subgraph(subset,edge_index, edge_attr = None, relabel_nodes: bool = False):
-    """Returns the induced subgraph of :obj:`(edge_index, edge_attr)`
-    containing the nodes in :obj:`subset`.
-
-    Args:
-        subset (LongTensor, BoolTensor or [int]): The nodes to keep.
-        edge_index (LongTensor): The edge indices.
-        edge_attr (Tensor, optional): Edge weights or multi-dimensional
-            edge features. (default: :obj:`None`)
-        relabel_nodes (bool, optional): If set to :obj:`True`, the resulting
-            :obj:`edge_index` will be relabeled to hold consecutive indices
-            starting from zero. (default: :obj:`False`)
-        num_nodes (int, optional): The number of nodes, *i.e.*
-            :obj:`max_val + 1` of :attr:`edge_index`. (default: :obj:`None`)
-
-    :rtype: (:class:`LongTensor`, :class:`Tensor`)
-    """
-
-    device = edge_index.device
-
-    node_mask = subset
+    state_dict = {}
+    for name, param0 in model0.state_dict().items():
+        param1 = model1.state_dict()[name]
+        state_dict[name] = param0.detach() - param1.detach()
+    return state_dict
 
 
-    edge_mask = node_mask[edge_index[0]] & node_mask[edge_index[1]]
+class ScaffoldOptimizer(torch.optim.Optimizer):
+    def __init__(self, params, lr, weight_decay):
+        defaults = dict(
+            lr=lr, weight_decay=weight_decay
+        )
+        super().__init__(params, defaults)
 
-    edge_index = edge_index[:, edge_mask]
+    def step(self, server_control, client_control, closure=None):
+        loss = None
+        if closure is not None:
+            loss = closure
 
-
-    edge_attr = edge_attr[edge_mask] if edge_attr is not None else None
-
-    # if relabel_nodes:
-    #     node_idx = torch.zeros(node_mask.size(0), dtype=torch.long,
-    #                            device=device)
-    #     node_idx[subset] = torch.arange(subset.sum().item(), device=device)
-    #     edge_index = node_idx[edge_index]
-
-
-    return edge_index, edge_attr, edge_mask
-# %%
-
-def get_split(args,data, device):
-    rs = np.random.RandomState(args.seed)
-    perm = rs.permutation(data.num_nodes)
-    train_number = int(0.2*len(perm))
-    idx_train = torch.tensor(sorted(perm[:train_number])).to(device)
-    data.train_mask = torch.zeros_like(data.train_mask)
-    data.train_mask[idx_train] = True
-
-    val_number = int(0.1*len(perm))
-    idx_val = torch.tensor(sorted(perm[train_number:train_number+val_number])).to(device)
-    data.val_mask = torch.zeros_like(data.val_mask)
-    data.val_mask[idx_val] = True
+        ng = len(self.param_groups[0]["params"])
+        names = list(server_control.keys())
 
 
-    test_number = int(0.2*len(perm))
-    idx_test = torch.tensor(sorted(perm[train_number+val_number:train_number+val_number+test_number])).to(device)
-    data.test_mask = torch.zeros_like(data.test_mask)
-    data.test_mask[idx_test] = True
+        # t = 0
+        # for group in self.param_groups:
+        #     for p in group["params"]:
+        #         if p.grad is None:
+        #             continue
+        #
+        #         c = server_control[names[t]]
+        #         ci = client_control[names[t]]
+        #
+        #         print(names[t], p.shape, c.shape, ci.shape)
+        #         d_p = p.grad.data + c.data - ci.data
+        #         p.data = p.data - d_p.data * group["lr"]
+        #         t += 1
+        # assert t == ng
+        for group in self.param_groups:
+            for p, c, ci in zip(group['params'], server_control.values(), client_control.values()):
+                if p.grad is None:
+                    continue
+                dp = p.grad.data + c.data - ci.data
+                p.data = p.data - dp.data * group['lr']
 
-    idx_clean_test = idx_test[:int(len(idx_test)/2)]
-    idx_atk = idx_test[int(len(idx_test)/2):]
+        return loss
 
-    return data, idx_train, idx_val, idx_clean_test, idx_atk
+def update_local(model,server_control, client_control, global_model,
+                 features, edge_index, edge_weight, labels, idx_train,
+                 args, idx_val=None, train_iters=200):
+
+    glo_model = copy.deepcopy(global_model)
+
+    optimizer = ScaffoldOptimizer(
+        model.parameters(),
+        lr=args.scal_lr,
+        weight_decay=args.weight_decay
+    )
+
+    best_loss_val = 100
+    best_acc_val = 0
+
+    for i in range(train_iters):
+        model.train()
+
+
+        output = model.forward(features, edge_index, edge_weight)
+        loss_train = F.nll_loss(output[idx_train], labels[idx_train])
+
+        optimizer.zero_grad()
+        loss_train.backward()
+        nn.utils.clip_grad_norm_(
+            model.parameters(), args.max_grad_norm
+        )
+        optimizer.step(
+            server_control=server_control,
+            client_control=client_control
+        )
+
+
+        model.eval()
+        with torch.no_grad():
+            output = model.forward(features, edge_index, edge_weight)
+            loss_val = F.nll_loss(output[idx_val], labels[idx_val])
+            acc_val = accuracy(output[idx_val], labels[idx_val])
+            acc_train = accuracy(output[idx_train], labels[idx_train])
+
+
+        if acc_val > best_acc_val:
+            best_acc_val = acc_val
+
+            weights = deepcopy(model.state_dict())
+            model.load_state_dict(weights)
+
+
+
+
+    delta_model = get_delta_model(glo_model, model)
+
+
+    local_steps = train_iters
+
+    return delta_model, local_steps,loss_train.item(), loss_val.item(), acc_train, acc_val
+
+
+def update_local_control(delta_model, server_control,
+        client_control, steps, lr):
+
+    new_control = copy.deepcopy(client_control)
+    delta_control = copy.deepcopy(client_control)
+
+    for name in delta_model.keys():
+        c = server_control[name]
+        ci = client_control[name]
+        delta = delta_model[name]
+
+        new_ci = ci.data - c.data + delta.data / (steps * lr)
+        new_control[name].data = new_ci
+        delta_control[name].data = ci.data - new_ci
+    return new_control, delta_control
+
+
+def scaffold(global_model,server_control,client_control,model,
+                 features, edge_index, edge_weight, labels, idx_train,
+                 args, idx_val=None, train_iters=200):
+
+
+    # # control variates
+    # server_control = init_control(global_model)
+    #
+    # client_controls = {
+    #     client: init_control(global_model)
+    #     for id, client in enumerate(model_list)
+    # }
+
+    # update local with control variates / ScaffoldOptimizer
+    delta_model, local_steps,loss_train, loss_val, acc_train, acc_val = update_local(
+        model, server_control, client_control, global_model,
+        features, edge_index, edge_weight, labels, idx_train,
+        args, idx_val=idx_val, train_iters=train_iters
+    )
+
+
+    client_control, delta_control = update_local_control(
+        delta_model=delta_model,
+        server_control=server_control,
+        client_control=client_control,
+        steps=local_steps,
+        lr=args.lr,
+    )
+
+
+    return loss_train, loss_val, acc_train, acc_val,client_control, delta_control, delta_model
