@@ -82,7 +82,7 @@ class GAT(nn.Module):
         self.gc1.reset_parameters()
         self.gc2.reset_parameters()
 
-    def fit(self, features, edge_index, edge_weight, labels, idx_train, idx_val=None, train_iters=200, initialize=True, verbose=False):
+    def fit(self,global_model, features, edge_index, edge_weight, labels, idx_train,args, idx_val=None, train_iters=200, initialize=True, verbose=False):
         if initialize:
             self.initialize()
         self.edge_index, self.edge_weight = edge_index, edge_weight
@@ -93,7 +93,7 @@ class GAT(nn.Module):
         if idx_val is None:
             self._train_without_val(self.labels, idx_train, train_iters, verbose)
         else:
-            loss_train, loss_val, acc_train, acc_val =  self._train_with_val(self.labels, idx_train, idx_val, train_iters, verbose)
+            loss_train, loss_val, acc_train, acc_val =  self._train_with_val(global_model,self.labels, idx_train, idx_val, train_iters, verbose,args)
         return  loss_train, loss_val, acc_train, acc_val
     def _train_without_val(self, labels, idx_train, train_iters, verbose):
         self.train()

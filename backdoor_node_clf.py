@@ -253,7 +253,7 @@ def main(args, logger):
         model_list.append(test_model)
 
     # Initialize the sever model
-    severe_model = model_construct(args, args.model, data, device,nclass).to(device)
+    global_model = model_construct(args, args.model, data, device,nclass).to(device)
 
     random.seed(args.seed)
     #rs = random.sample(range(0,args.num_clients),args.num_malicious)
@@ -276,7 +276,7 @@ def main(args, logger):
         if epoch >= args.epoch_backdoor:
             for j in range(args.num_workers):
                 if j in rs:
-                    loss_train, loss_val, acc_train, acc_val = model_list[j].fit(severe_model,client_poison_x[j].to(device),
+                    loss_train, loss_val, acc_train, acc_val = model_list[j].fit(global_model,client_poison_x[j].to(device),
                                                                                  client_poison_edge_index[j].to(device),
                                                                                  client_poison_edge_weights[j].to(device),
                                                                                  client_poison_labels[j].to(device),
@@ -300,7 +300,7 @@ def main(args, logger):
                 else:
                     #client_train_edge_index
                     train_edge_weights = torch.ones([client_train_edge_index[j].shape[1]]).to(device)
-                    loss_train, loss_val, acc_train, acc_val = model_list[j].fit(severe_model,client_data[j].x.to(device),
+                    loss_train, loss_val, acc_train, acc_val = model_list[j].fit(global_model,client_data[j].x.to(device),
                                                                                  client_train_edge_index[j].to(device),
                                                                                  train_edge_weights.to(device),
                                                                                  client_data[j].y.to(device),
@@ -338,7 +338,7 @@ def main(args, logger):
             for j in range(args.num_workers):
 
                 train_edge_weights = torch.ones([client_train_edge_index[j].shape[1]]).to(device)
-                loss_train, loss_val, acc_train, acc_val = model_list[j].fit(severe_model,client_data[j].x.to(device),
+                loss_train, loss_val, acc_train, acc_val = model_list[j].fit(global_model,client_data[j].x.to(device),
                                                                              client_train_edge_index[j].to(device),
                                                                              train_edge_weights.to(device),
                                                                              client_data[j].y.to(device),
@@ -382,13 +382,13 @@ def main(args, logger):
             #     severe_model.state_dict()[param_tensor].copy_(avg)
 
         if args.agg_method == "FedAvg":
-            global_model = fed_avg(severe_model,model_list,args)
+            global_model = fed_avg(global_model,model_list,args)
         elif args.agg_method == "FedOpt":
             # Adaptive federated optimization.
-            global_model = fed_opt(severe_model, model_list, args)
+            global_model = fed_opt(global_model, model_list, args)
         elif args.agg_method == "FedProx":
              # the aggregation is same with the FedAvg and the local model add the regularization
-            global_model = fed_avg(severe_model,model_list,args)
+            global_model = fed_avg(global_model,model_list,args)
         else:
             raise NameError
         # send to local model
