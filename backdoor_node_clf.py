@@ -12,7 +12,7 @@ import Node_level_Models.helpers.selection_utils  as hs
 from Node_level_Models.helpers.func_utils import subgraph,get_split
 from torch_geometric.utils import to_undirected
 #Split Graph and creating client datasets
-from helpers.split_graph_utils import split_Random, split_Louvain
+from helpers.split_graph_utils import split_Random, split_Louvain, split_Metis
 from Node_level_Models.models.construct import model_construct
 from Node_level_Models.helpers.func_utils import prune_unrelated_edge,prune_unrelated_edge_isolated
 import  random
@@ -112,6 +112,8 @@ def main(args, logger):
         client_data = split_Random(args, data)
     elif args.is_iid == "non-iid-louvain":
         client_data = split_Louvain(args, data)
+    elif args.is_iid == "non-iid-Metis":
+        client_data = split_Metis(args, data)
     else:
         raise NameError
 

@@ -6,8 +6,9 @@ from sklearn.metrics import f1_score, precision_score, recall_score
 import community as community_louvain
 import random
 from tqdm import tqdm
+import metispy as metis
 
-
+import torch_geometric
 def split_communities(data, clients):
     G = to_networkx(data, to_undirected=True, node_attrs=['x', 'y'])
     communities = sorted(nx.community.asyn_fluidc(G, clients, max_iter=5000, seed=12345))
@@ -21,6 +22,90 @@ def split_communities(data, clients):
         list_of_clients.append(from_networkx(G.subgraph(node_groups[i]).copy()))
 
     return list_of_clients
+
+def split_Metis(args,data):
+    """
+    original code link： https://github.com/alibaba/FederatedScope/blob/fe1806b36b4629bb0057e84912d5f42a79f4461d/federatedscope/core/splitters/graph/random_splitter.py#L14
+    :param args: args.overlapping_rate(float):Additional samples of overlapping data, \
+            eg. ``'0.4'``;
+                    args.drop_edge(float): Drop edges (drop_edge / client_num) for each \
+            client within overlapping part.
+    :param data:
+    :param clients:
+    :return:
+    """
+    args.drop_edge = 0
+    ovlap = args.overlapping_rate
+    drop_edge = args.drop_edge
+    client_num = args.num_workers
+
+    sampling_rate = (np.ones(client_num) -
+                          ovlap) / client_num
+
+    data.index_orig = torch.arange(data.num_nodes)
+
+
+    print("Graph to Networkx")
+    G = to_networkx(
+        data,
+        node_attrs=['x', 'y', 'train_mask', 'val_mask', 'test_mask'],
+        to_undirected=True)
+    print("Setting node attributes")
+    nx.set_node_attributes(G,
+                           dict([(nid, nid)
+                                 for nid in range(nx.number_of_nodes(G))]),
+                           name="index_orig")
+    print("Calculating  partition")
+    client_node_idx = {idx: [] for idx in range(client_num)}
+
+    n_cuts, membership = metis.part_graph(G, client_num)
+    indices = []
+    for i in range(client_num):
+        client_indices = np.where(np.array(membership) == i)[0]
+        indices.append(client_indices)
+    indices = np.concatenate(indices)
+
+
+
+    sum_rate = 0
+    for idx, rate in enumerate(sampling_rate):
+        client_node_idx[idx] = indices[round(sum_rate *
+                                             data.num_nodes):round(
+            (sum_rate + rate) *
+            data.num_nodes)]
+        sum_rate += rate
+
+    if ovlap:
+        ovlap_nodes = indices[round(sum_rate * data.num_nodes):]
+        for idx in client_node_idx:
+            client_node_idx[idx] = np.concatenate(
+                (client_node_idx[idx], ovlap_nodes))
+
+    # Drop_edge index for each client
+    if drop_edge:
+        ovlap_graph = nx.Graph(nx.subgraph(G, ovlap_nodes))
+        ovlap_edge_ind = np.random.permutation(
+            ovlap_graph.number_of_edges())
+        drop_all = ovlap_edge_ind[:round(ovlap_graph.number_of_edges() *
+                                         drop_edge)]
+        drop_client = [
+            drop_all[s:s + round(len(drop_all) / client_num)]
+            for s in range(0, len(drop_all),
+                           round(len(drop_all) / client_num))
+        ]
+
+    graphs = []
+    for owner in client_node_idx:
+        nodes = client_node_idx[owner]
+        sub_g = nx.Graph(nx.subgraph(G, nodes))
+        if drop_edge:
+            sub_g.remove_edges_from(
+                np.array(ovlap_graph.edges)[drop_client[owner]])
+        graphs.append(from_networkx(sub_g))
+
+    return graphs
+
+
 
 def split_Random(args,data):
     """
@@ -57,6 +142,7 @@ def split_Random(args,data):
     print("Calculating  partition")
     client_node_idx = {idx: [] for idx in range(client_num)}
     indices = np.random.permutation(data.num_nodes)
+
     sum_rate = 0
     for idx, rate in enumerate(sampling_rate):
         client_node_idx[idx] = indices[round(sum_rate *
