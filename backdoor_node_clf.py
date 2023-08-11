@@ -1,23 +1,20 @@
 import torch
-
+import  random
+import numpy as np
+import torch_geometric.transforms as T
+from torch_geometric.utils import scatter
 from torch_geometric.datasets import Planetoid,Reddit2,Flickr,PPI,Reddit,Yelp
 from torch_geometric.datasets import Coauthor, Amazon
-import torch_geometric.transforms as T
-import numpy as np
-import os
-import time
 import Node_level_Models.helpers.selection_utils  as hs
-
 from Node_level_Models.helpers.func_utils import subgraph,get_split
 from torch_geometric.utils import to_undirected
-#Split Graph and creating client datasets
 from Node_level_Models.helpers.split_graph_utils import split_Random, split_Louvain, split_Metis
 from Node_level_Models.models.construct import model_construct
 from Node_level_Models.helpers.func_utils import prune_unrelated_edge,prune_unrelated_edge_isolated
-import  random
-from Node_level_Models.data.data import  ogba_data,Amazon_data,Coauthor_data
-from torch_geometric.utils import scatter
+from Node_level_Models.data.datasets import  ogba_data,Amazon_data,Coauthor_data
 from Node_level_Models.aggregators.aggregation import fed_avg, fed_opt
+
+
 def main(args, logger):
     np.random.seed(args.seed)
     torch.manual_seed(args.seed)
@@ -375,16 +372,6 @@ def main(args, logger):
             # wandb logger
             logger.log(worker_results)
 
-            # print("accuracy on clean test nodes: {:.4f}".format(clean_acc))
-
-            # Server Aggregation
-
-            # # Aggregation methods
-            # Sub_model_list = random.sample(model_list, args.num_sample_submodels)
-            # for param_tensor in Sub_model_list[0].state_dict():
-            #     avg = (sum(c.state_dict()[param_tensor] for c in Sub_model_list)) / len(Sub_model_list)
-            #     # Update the global
-            #     severe_model.state_dict()[param_tensor].copy_(avg)
 
         if args.agg_method == "FedAvg":
             global_model = fed_avg(global_model,model_list,args)

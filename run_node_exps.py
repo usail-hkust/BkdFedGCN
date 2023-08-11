@@ -1,8 +1,8 @@
-from Node_level_Models.helpers.config import args_parser
-from backdoor_node_clf import  main as backdoor_main
+from Node_level_Models.configs.config import args_parser
 from helpers.metrics_utils import log_test_results
+
+
 import numpy as np
-import json
 import wandb
 
 args = args_parser()
