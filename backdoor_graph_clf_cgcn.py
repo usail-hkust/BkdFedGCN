@@ -1,19 +1,18 @@
-from trainer.workerbase  import WorkerBase
 import torch
 from torch import nn
 import json
 import os
+import time
+import numpy as np
+from torch.utils.data import DataLoader
+import copy
 from Graph_level_Models.helpers.config import args_parser
 from Graph_level_Models.datasets.gnn_util import  transform_dataset,  split_dataset
 from Graph_level_Models.datasets.TUs import TUsDataset
 from Graph_level_Models.nets.TUs_graph_classification.load_net import gnn_model
 from Graph_level_Models.helpers.evaluate import gnn_evaluate_accuracy
-import time
-import numpy as np
-from torch.utils.data import DataLoader
-import copy
-from defense import foolsgold
-
+from Graph_level_Models.defenses.defense import foolsgold
+from Graph_level_Models.trainer.workerbase  import WorkerBase
 def server_robust_agg(args, grad):  ## server aggregation
     grad_in = np.array(grad).reshape((args.num_workers, -1)).mean(axis=0)
     return grad_in.tolist()
