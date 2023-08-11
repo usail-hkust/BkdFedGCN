@@ -1,6 +1,6 @@
 from Graph_level_Models.helpers.config import args_parser
 from backdoor_graph_clf import  main as backdoor_main
-from helpers.metrics_utils import log_test_results
+from Graph_level_Models.helpers.metrics_utils import log_test_results
 import numpy as np
 import json
 import wandb
