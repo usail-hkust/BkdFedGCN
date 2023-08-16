@@ -1,7 +1,5 @@
 import networkx as nx
 import random
-import copy
-
 import torch
 import pickle
 from tqdm import tqdm
@@ -10,8 +8,8 @@ import numpy as np
 import copy
 import dgl
 from torch.utils.data import random_split
-from torch.utils.data import ConcatDataset
 from torch.utils.data import DataLoader, Dataset
+
 class TriggerDataset(Dataset):
     def __init__(self, graphs, labels):
         self.graphs = graphs

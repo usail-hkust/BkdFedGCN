@@ -17,8 +17,9 @@ def main(args):
     with open(args.config) as f:
         config = json.load(f)
     model_name = config['model']
+    fed_name = "Fed_alg-"+args.defense + "_"
     # 'data-{}_model-{}_IID-{}_num_workers-{}_num_mali-{}_epoch_backdoor-{}_frac_of_avg-{}_trigger_type-{}_trigger_position-{}_poisoning_intensity-{}'
-    file_name = 'D-{}_M-{}_IID-{}_NW-{}_NM-{}_EB-{}_FA-{}_TPye-{}_TPo-{}_PI-{}'.format(
+    file_name = fed_name +'D-{}_M-{}_IID-{}_NW-{}_NM-{}_EB-{}_FA-{}_TPye-{}_TPo-{}_PI-{}'.format(
         args.dataset,
         model_name,
         args.is_iid,

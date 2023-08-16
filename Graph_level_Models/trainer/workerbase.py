@@ -2,10 +2,8 @@ import logging
 import torch
 import time
 from abc import ABCMeta, abstractmethod
-import numpy as np
-from torch._C import device
-import torch.nn.functional as F
-from helpers.metrics import accuracy_TU as accuracy
+
+from Graph_level_Models.helpers.metrics import accuracy_TU as accuracy
 import os
 logger = logging.getLogger('client.workerbase')
 

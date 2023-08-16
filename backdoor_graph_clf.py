@@ -1,4 +1,4 @@
-from trainer.workerbase  import WorkerBase
+import  random
 import torch
 from torch import nn
 import json
@@ -13,7 +13,8 @@ from Graph_level_Models.datasets.TUs import TUsDataset
 from Graph_level_Models.nets.TUs_graph_classification.load_net import gnn_model
 from Graph_level_Models.helpers.evaluate import gnn_evaluate_accuracy
 from Graph_level_Models.defenses.defense import foolsgold
-
+from Graph_level_Models.trainer.workerbase  import WorkerBase
+from Graph_level_Models.aggregators.aggregation import fed_avg
 def server_robust_agg(args, grad):  ## server aggregation
     grad_in = np.array(grad).reshape((args.num_workers, -1)).mean(axis=0)
     return grad_in.tolist()
@@ -64,9 +65,10 @@ def main(args, logger):
     net_params['n_classes'] = num_classes
     net_params['dropout'] = args.dropout
     args.epoch_backdoor = int(args.epoch_backdoor * args.epochs)
-    model = gnn_model(MODEL_NAME, net_params)
 
-    # print("Target Model:\n{}".format(model))
+    model = gnn_model(MODEL_NAME, net_params)
+    global_model = gnn_model(MODEL_NAME, net_params)
+
     client = []
 
     # logger data
@@ -125,15 +127,15 @@ def main(args, logger):
                                   drop_last=drop_last,
                                   collate_fn=dataset.collate)
 
-        # only trigger data
+        # only trigger data in test dataloader
         attack_loader = DataLoader(test_trigger_graphs, batch_size=args.batch_size, shuffle=False,
                                    drop_last=drop_last,
                                    collate_fn=dataset.collate)
-        # only clean data
+        # only clean data in test dataloader
         test_clean_loader = DataLoader(test_clean_data, batch_size=args.batch_size, shuffle=False,
                                    drop_last=drop_last,
                                    collate_fn=dataset.collate)
-        # only unchanged data
+        # only unchanged data in test dataloader
         test_unchanged_loader = DataLoader(test_unchanged_data, batch_size=args.batch_size, shuffle=False,
                                    drop_last=drop_last,
                                    collate_fn=dataset.collate)
@@ -188,72 +190,44 @@ def main(args, logger):
                 tmp_acc = gnn_evaluate_accuracy(attack_loader_list[j], client[i].model)
                 print('Client %d with local trigger %d: %.3f' % (i, j, tmp_acc))
                 att_list.append(tmp_acc)
-            if not args.filename == "":
-                save_path = os.path.join(args.filename, str(args.seed), config['model'] + '_' + args.dataset + \
-                                         '_%d_%d_%.2f_%.2f_%.2f_%s' % (
-                                         args.num_workers, args.num_mali, args.frac_of_avg, args.poisoning_intensity,
-                                         args.density,args.trigger_type) + '_%d.txt' % i)
-                path = os.path.split(save_path)[0]
-                isExist = os.path.exists(path)
-                if not isExist:
-                    os.makedirs(path)
 
-                with open(save_path, 'a') as f:
-                    f.write('%.3f %.3f %.3f %.3f' % (train_loss, train_acc, test_loss, test_acc))
-                    for i in range(len(triggers)):
-                        f.write('%.3f' % att_list[i])
-                        f.write(' ')
-                    f.write('\n')
 
         # wandb logger
         logger.log(worker_results)
 
-        weights = []
-        for i in range(args.num_workers):
-            weights.append(client[i].get_weights())
-            weight_history.append(client[i].get_weights())
-        #print('len weights',len(weights[0]))
-
-        # Aggregation in the server to get the global model
+        selected_clients = random.sample(client, args.num_selected_models)
         # if there is a defense applied
         if args.defense == 'foolsgold':
+            weights = []
+            for i in range(args.num_workers):
+                weights.append(client[i].get_weights())
+                weight_history.append(client[i].get_weights())
             result, weight_history, alpha = foolsgold(args, weight_history, weights)
-            save_path = os.path.join("./Results/alpha/DBA", str(args.seed), MODEL_NAME + '_' + args.dataset + \
-                                     '_%d_%d_%.2f_%.2f_%.2f_%s' % (
-                                     args.num_workers, args.num_mali, args.frac_of_avg, args.poisoning_intensity,
-                                     args.density,args.trigger_type) + '_alpha.txt')
-            path = os.path.split(save_path)[0]
-            isExist = os.path.exists(path)
-            if not isExist:
-                os.makedirs(path)
-            with open(save_path, 'a') as f:
-                for i in range(args.num_workers):
-                    f.write("%.3f" % (alpha[i]))
-                    f.write(' ')
-                f.write("\n")
+            for i in range(args.num_workers):
+                client[i].set_weights(weights=result)
+                client[i].upgrade()
+        elif args.defense == 'fedavg':
+             global_model = fed_avg(global_model,selected_clients, args)
+             # send to local model
+             for param_tensor in global_model.state_dict():
+                 global_para = global_model.state_dict()[param_tensor]
+                 for local_client in client:
+                     local_client.model.state_dict()[param_tensor].copy_(global_para)
         else:
+            weights = []
+            for i in range(args.num_workers):
+                weights.append(client[i].get_weights())
+                weight_history.append(client[i].get_weights())
+            result, weight_history, alpha = foolsgold(args, weight_history, weights)
             result = server_robust_agg(args, weights)
+            for i in range(args.num_workers):
+                client[i].set_weights(weights=result)
+                client[i].upgrade()
 
-        for i in range(args.num_workers):
-            client[i].set_weights(weights=result)
-            client[i].upgrade()
 
         # evaluate the global model: test_acc
         test_acc = gnn_evaluate_accuracy(client[0].test_iter, client[0].model)
         print('Global Test Acc: %.3f' % test_acc)
-        if not args.filename == "":
-            save_path = os.path.join(args.filename, str(args.seed),
-                                     MODEL_NAME + '_' + args.dataset + '_%d_%d_%.2f_%.2f_%.2f_%s' \
-                                     % (args.num_workers, args.num_mali, args.frac_of_avg, args.poisoning_intensity,
-                                        args.density,args.trigger_type) + '_global_test.txt')
-            path = os.path.split(save_path)[0]
-            isExist = os.path.exists(path)
-            if not isExist:
-                os.makedirs(path)
-
-            with open(save_path, 'a') as f:
-                f.write("%.3f" % (test_acc))
-                f.write("\n")
 
         # inject triggers into the testing data
         if args.num_mali > 0 and epoch >= args.epoch_backdoor:
@@ -263,20 +237,6 @@ def main(args, logger):
                 print('Global model with local trigger %d: %.3f' % (i, tmp_acc))
                 local_att_acc.append(tmp_acc)
 
-            if not args.filename == "":
-                save_path = os.path.join(args.filename, str(args.seed),
-                                         MODEL_NAME + '_' + args.dataset + '_%d_%d_%.2f_%.2f_%.2f_%s' \
-                                         % (args.num_workers, args.num_mali, args.frac_of_avg, args.poisoning_intensity,
-                                            args.density,args.trigger_type) + '_global_attack.txt')
-                path = os.path.split(save_path)[0]
-                isExist = os.path.exists(path)
-                if not isExist:
-                    os.makedirs(path)
-                with open(save_path, 'a') as f:
-                    for i in range(args.num_mali):
-                        f.write("%.3f" % (local_att_acc[i]))
-                        f.write(' ')
-                    f.write('\n')
 
 
     # clean accuracy , poison accuracy, attack success rate

@@ -9,10 +9,10 @@ import copy
 
 
 
-def fed_avg(severe_model,local_models,args):
+def fed_avg(severe_model,local_clients,args):
     #selected_models = random.sample(model_list, args.num_selected_models)
-    for param_tensor in local_models[0].state_dict():
-        avg = (sum(c.state_dict()[param_tensor] for c in local_models)) / len(local_models)
+    for param_tensor in local_clients[0].model.state_dict():
+        avg = (sum(c.state_dict()[param_tensor] for c in local_clients)) / len(local_clients)
         # Update the global
         severe_model.state_dict()[param_tensor].copy_(avg)
         # Send global to the local

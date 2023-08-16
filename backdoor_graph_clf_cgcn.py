@@ -187,22 +187,7 @@ def main(args, logger):
                 tmp_acc = gnn_evaluate_accuracy(attack_loader_list[j], client[i].model)
                 print('Client %d with local trigger %d: %.3f' % (i, j, tmp_acc))
                 att_list.append(tmp_acc)
-            if not args.filename == "":
-                save_path = os.path.join(args.filename, str(args.seed), config['model'] + '_' + args.dataset + \
-                                         '_%d_%d_%.2f_%.2f_%.2f_%s' % (
-                                         args.num_workers, args.num_mali, args.frac_of_avg, args.poisoning_intensity,
-                                         args.density,args.trigger_type) + '_%d.txt' % i)
-                path = os.path.split(save_path)[0]
-                isExist = os.path.exists(path)
-                if not isExist:
-                    os.makedirs(path)
 
-                with open(save_path, 'a') as f:
-                    f.write('%.3f %.3f %.3f %.3f' % (train_loss, train_acc, test_loss, test_acc))
-                    for i in range(len(triggers)):
-                        f.write('%.3f' % att_list[i])
-                        f.write(' ')
-                    f.write('\n')
 
         # wandb logger
         logger.log(worker_results)
@@ -217,19 +202,6 @@ def main(args, logger):
         # if there is a defense applied
         if args.defense == 'foolsgold':
             result, weight_history, alpha = foolsgold(args, weight_history, weights)
-            save_path = os.path.join("./Results/alpha/DBA", str(args.seed), MODEL_NAME + '_' + args.dataset + \
-                                     '_%d_%d_%.2f_%.2f_%.2f_%s' % (
-                                     args.num_workers, args.num_mali, args.frac_of_avg, args.poisoning_intensity,
-                                     args.density,args.trigger_type) + '_alpha.txt')
-            path = os.path.split(save_path)[0]
-            isExist = os.path.exists(path)
-            if not isExist:
-                os.makedirs(path)
-            with open(save_path, 'a') as f:
-                for i in range(args.num_workers):
-                    f.write("%.3f" % (alpha[i]))
-                    f.write(' ')
-                f.write("\n")
         else:
             result = server_robust_agg(args, weights)
 
@@ -240,19 +212,6 @@ def main(args, logger):
         # evaluate the global model: test_acc
         test_acc = gnn_evaluate_accuracy(client[0].test_iter, client[0].model)
         print('Global Test Acc: %.3f' % test_acc)
-        if not args.filename == "":
-            save_path = os.path.join(args.filename, str(args.seed),
-                                     MODEL_NAME + '_' + args.dataset + '_%d_%d_%.2f_%.2f_%.2f_%s' \
-                                     % (args.num_workers, args.num_mali, args.frac_of_avg, args.poisoning_intensity,
-                                        args.density,args.trigger_type) + '_global_test.txt')
-            path = os.path.split(save_path)[0]
-            isExist = os.path.exists(path)
-            if not isExist:
-                os.makedirs(path)
-
-            with open(save_path, 'a') as f:
-                f.write("%.3f" % (test_acc))
-                f.write("\n")
 
         # inject triggers into the testing data
         if args.num_mali > 0 and epoch >= args.epoch_backdoor:
@@ -262,20 +221,6 @@ def main(args, logger):
                 print('Global model with local trigger %d: %.3f' % (i, tmp_acc))
                 local_att_acc.append(tmp_acc)
 
-            if not args.filename == "":
-                save_path = os.path.join(args.filename, str(args.seed),
-                                         MODEL_NAME + '_' + args.dataset + '_%d_%d_%.2f_%.2f_%.2f_%s' \
-                                         % (args.num_workers, args.num_mali, args.frac_of_avg, args.poisoning_intensity,
-                                            args.density,args.trigger_type) + '_global_attack.txt')
-                path = os.path.split(save_path)[0]
-                isExist = os.path.exists(path)
-                if not isExist:
-                    os.makedirs(path)
-                with open(save_path, 'a') as f:
-                    for i in range(args.num_mali):
-                        f.write("%.3f" % (local_att_acc[i]))
-                        f.write(' ')
-                    f.write('\n')
 
 
     # clean accuracy , poison accuracy, attack success rate

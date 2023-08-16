@@ -372,22 +372,25 @@ def main(args, logger):
             # wandb logger
             logger.log(worker_results)
 
-
+        selected_models = random.sample(model_list, args.num_selected_models)
+        # selected_models_index = [model_list.index(model) for model in selected_models]
+        # print("selected id", selected_models_index)
+        # Aggregation
         if args.agg_method == "FedAvg":
-            global_model = fed_avg(global_model,model_list,args)
+            global_model = fed_avg(global_model,selected_models,args)
         elif args.agg_method == "FedOpt":
             # Adaptive federated optimization.
-            global_model = fed_opt(global_model, model_list, args)
+            global_model = fed_opt(global_model, selected_models, args)
         elif args.agg_method == "FedProx":
              # the aggregation is same with the FedAvg and the local model add the regularization
-            global_model = fed_avg(global_model,model_list,args)
+            global_model = fed_avg(global_model,selected_models,args)
         else:
             raise NameError
         # send to local model
         for param_tensor in global_model.state_dict():
-            avg = global_model.state_dict()[param_tensor]
-            for cl in model_list:
-                cl.state_dict()[param_tensor].copy_(avg)
+            global_para = global_model.state_dict()[param_tensor]
+            for local_model in model_list:
+                local_model.state_dict()[param_tensor].copy_(global_para)
 
     overall_performance = []
     overall_malicious_train_attach_rate = []

@@ -4,8 +4,7 @@ def args_parser():
     parser = argparse.ArgumentParser(description='Insert Arguments')
     parser.add_argument("--seed", type=int, default=10, help="seed")
     parser.add_argument("--num_workers", type=int, default=5, help="number of clients")
-    parser.add_argument("--num_sample_submodels", type=int, default=5,
-                        help="num of clients randomly selected to participate in Federated Learning")
+    parser.add_argument("--num_selected_models", type=int, default=5, help="num of clients randomly selected to participate in Federated Learning")
     parser.add_argument("--hidden_channels", type=int, default=32, help="size of GNN hidden layer")
     parser.add_argument("--learning_rate", type=float, default=0.01, help="learning rate for training")
     parser.add_argument("--inner_epochs", type=int, default=1, help="epochs for training")
