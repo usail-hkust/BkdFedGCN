@@ -56,12 +56,33 @@ python run_node_exps.py  --model GCN\
                          --overlapping_rate 0.0
 ```
 
+
+###  Backdoor attack  in Federated GNNs on other federated algorithms
+#### "FedOpt", "FedProx","scaffold"
+
+```
+python run_node_exps.py  --model GCN\
+                         --dataset Cora\
+                         --is_iid iid\
+                         --num_workers 5\
+                         --num_mali 1\
+                         --epoch_backdoor 0\
+                         --trigger_size 3\
+                         --trigger_type renyi\
+                         --trigger_position random\
+                         --poisoning_intensity 0.1\
+                         --overlapping_rate 0.0 \
+                         --agg_method FedOpt
+```
+
+
+
 ###  Multi Factors in Backdoor attack  in Federated GNNs: Graph Classification experiments
 
 
 |        | Component            | Paramater                                                                             | Control                 | Default Value | Choice                           |
 |--------|----------------------|---------------------------------------------------------------------------------------|-------------------------|---------------|----------------------------------|
-| Server |  IID & Non-IID       | Independent and identically distributed & Non Independent and identically distributed | `--is_iid`              | `iid`       | `iid`, `non-iid-louvain`             |
+| Server |  IID & Non-IID       | Independent and identically distributed & Non Independent and identically distributed | `--is_iid`              | `iid`       | `iid`, `non-iid-louvain`, `non-iid-Metis`     |
 |        | Number of Workers    | The number of normal worker                                                           | `--num_workers`         | `5`           | `5`                              |
 |        | Number of Malicious  | The number of malicious attacker                                                      | `--num_mali`            | `1`           | `1`,`2`,`3`,`4`,`5`              |
 |        | Attack Time  | The time at which a backdoor is first conducted by an attacker.                       | `--epoch_backdoor`      | `0`           | `0`,`0.1`,`0.2`,`0.3`,`0.4`，`0.5` |
@@ -202,6 +223,23 @@ and/or our related works
 ## Acknowledgement
 The codes are modifed based on [Xu et al. 2020](https://github.com/xujing1994/bkd_fedgnn) and [Dai et al. 2020](https://github.com/ventr1c/UGBA)
 To the best of our knowledge, our work is the first to extend the node-level backdoor attack to the federated GNNs setting
+
+
+## Install metis
+
+
+```python
+wget http://glaros.dtc.umn.edu/gkhome/fetch/sw/metis/metis-5.1.0.tar.gz
+gunzip metis-5.1.0.tar.gz
+tar -xvf metis-5.1.0.tar
+rm metis-5.1.0.tar
+cd metis-5.1.0
+make config shared=1
+make install
+export METIS_DLL=/usr/local/lib/libmetis.so
+
+pip3 install metis-python
+```
 
 ## Environment settings and libraries we used in our experiments
 
