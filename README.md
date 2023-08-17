@@ -166,7 +166,7 @@ running command for training:
 
 ```python 
 
---defense fedavg, fedopt
+--defense fedavg, fedopt, fedprox
 ```
 
 ```python
