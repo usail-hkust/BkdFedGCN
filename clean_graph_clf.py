@@ -138,19 +138,6 @@ def main(args, logger):
                     worker_results[f"client_{i}"][ele] = test_acc
 
 
-            if not args.filename == "":
-                save_path = os.path.join(args.filename, str(args.seed), config['model'] + '_' + args.dataset + "_clean_" + '_%d.txt' % i)
-                path = os.path.split(save_path)[0]
-                isExist = os.path.exists(path)
-                if not isExist:
-                    os.makedirs(path)
-
-                with open(save_path, 'a') as f:
-                    f.write('%.3f %.3f %.3f %.3f' % (train_loss, train_acc, test_loss, test_acc))
-                    for i in range(len(triggers)):
-                        f.write('%.3f' % att_list[i])
-                        f.write(' ')
-                    f.write('\n')
 
         # wandb logger
         logger.log(worker_results)
@@ -172,17 +159,6 @@ def main(args, logger):
         # evaluate the global model: test_acc
         test_acc = gnn_evaluate_accuracy(client[0].test_iter, client[0].model)
         print('Global Test Acc: %.3f' % test_acc)
-        if not args.filename == "":
-            save_path = os.path.join(args.filename, str(args.seed),
-                                     MODEL_NAME + '_' + args.dataset + "_clean_" + '_global_test.txt')
-            path = os.path.split(save_path)[0]
-            isExist = os.path.exists(path)
-            if not isExist:
-                os.makedirs(path)
-
-            with open(save_path, 'a') as f:
-                f.write("%.3f" % (test_acc))
-                f.write("\n")
 
 
 

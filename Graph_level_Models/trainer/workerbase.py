@@ -63,16 +63,11 @@ class WorkerBase(metaclass=ABCMeta):
         train_l_sum, train_acc_sum, n, batch_count, start = 0.0, 0.0, 0, 0, time.time()
         #self.optimizer.zero_grad()
         for batch_graphs, batch_labels in self.train_iter:
-            print("batch_graphs",batch_graphs)
-            print("batch_labels",batch_labels)
 
             batch_graphs = batch_graphs.to(self.device)
             batch_x = batch_graphs.ndata['feat'].to(self.device)  # num x feat
             batch_e = batch_graphs.edata['feat'].to(self.device)
-            print("batch_graphs.ndata['_ID'].to(self.device)", batch_graphs.ndata['_ID'].to(self.device))
-            print("batch_e",batch_e.shape)
-            print("batch_graphs.edges()",batch_graphs.edges().shape)
-            tt
+
             batch_labels = batch_labels.to(torch.long)
             batch_labels = batch_labels.to(self.device)
             self.optimizer.zero_grad()

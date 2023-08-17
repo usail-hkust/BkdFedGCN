@@ -14,7 +14,7 @@ from Graph_level_Models.nets.TUs_graph_classification.load_net import gnn_model
 from Graph_level_Models.helpers.evaluate import gnn_evaluate_accuracy
 from Graph_level_Models.defenses.defense import foolsgold
 from Graph_level_Models.trainer.workerbase  import WorkerBase
-from Graph_level_Models.aggregators.aggregation import fed_avg
+from Graph_level_Models.aggregators.aggregation import fed_avg,fed_opt
 def server_robust_agg(args, grad):  ## server aggregation
     grad_in = np.array(grad).reshape((args.num_workers, -1)).mean(axis=0)
     return grad_in.tolist()
@@ -208,6 +208,13 @@ def main(args, logger):
                 client[i].upgrade()
         elif args.defense == 'fedavg':
              global_model = fed_avg(global_model,selected_clients, args)
+             # send to local model
+             for param_tensor in global_model.state_dict():
+                 global_para = global_model.state_dict()[param_tensor]
+                 for local_client in client:
+                     local_client.model.state_dict()[param_tensor].copy_(global_para)
+        elif args.defense == 'fedopt':
+             global_model = fed_opt(global_model,selected_clients, args)
              # send to local model
              for param_tensor in global_model.state_dict():
                  global_para = global_model.state_dict()[param_tensor]

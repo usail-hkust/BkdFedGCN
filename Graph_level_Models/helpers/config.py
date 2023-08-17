@@ -4,6 +4,7 @@ def args_parser():
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     # federated arguments
     parser.add_argument('--num_workers', type=int, default=5, help="number of clients in total")
+    parser.add_argument('--num_selected_models', type=int, default=5, help="number selected models")
     parser.add_argument('--batch_size', type=int, default=128, help="local batch size")
     parser.add_argument('--epochs', type=int, default=1000, help="training epochs")
     parser.add_argument('--lr', type=float, default=7e-4, help="learning rate")
@@ -12,7 +13,14 @@ def args_parser():
     parser.add_argument('--gamma', type=float, default=0.7, help="gamma")
     parser.add_argument('--dropout', type=float, default=0.0, help="drop out")
     parser.add_argument('--momentum', type=float, default=0.9, help="SGD momentum")
-    parser.add_argument('--defense', type=str, default='None', help='whethere perform a defense, e.g., foolsgold, flame')
+    parser.add_argument('--defense', type=str, default='None', help='whethere perform a defense, e.g., foolsgold, flame, and other federated algorithms')
+    # federated alg
+    parser.add_argument('--mu', type=float, default=0.01, help='proximal term constant')
+    parser.add_argument('--glo_optimizer', type=str, default="Adam", help='the optimizer of global model in FedOPT')
+    parser.add_argument('--glo_lr', type=float, default=3e-4, help='the learning rate  of global model in FedOPT')
+    parser.add_argument('--max_grad_norm', type=float, default=100.0, help='max grad norm')
+    parser.add_argument('--scal_lr', type=float, default=0.01, help='the learning rate  of global model in FedOPT')
+
 
     # argument for backdoor attack in GNN model
     parser.add_argument('--dataset', type=str, default="IMDB-BINARY", help='name of dataset')
