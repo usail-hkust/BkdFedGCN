@@ -13,6 +13,11 @@ from Graph_level_Models.nets.TUs_graph_classification.load_net import gnn_model
 from Graph_level_Models.helpers.evaluate import gnn_evaluate_accuracy
 from Graph_level_Models.defenses.defense import foolsgold
 from Graph_level_Models.trainer.workerbase  import WorkerBase
+
+from Graph_level_Models.aggregators.fedstarlib.models import GIN, serverGIN, GIN_dc, serverGIN_dc
+from Graph_level_Models.aggregators.fedstarlib.server import Server
+from Graph_level_Models.aggregators.fedstarlib.client import Client_GC
+
 def server_robust_agg(args, grad):  ## server aggregation
     grad_in = np.array(grad).reshape((args.num_workers, -1)).mean(axis=0)
     return grad_in.tolist()
@@ -65,6 +70,17 @@ def main(args, logger):
     args.epoch_backdoor = int(args.epoch_backdoor * args.epochs)
     model = gnn_model(MODEL_NAME, net_params)
 
+
+
+
+    if args.alg == 'fedstar':
+        smodel = serverGIN_dc(n_se=args.n_se, nlayer=args.nlayer, nhid=args.hidden)
+    else:
+        smodel = serverGIN(nlayer=args.nlayer, nhid=args.hidden)
+    server = Server(smodel, args.device)
+
+
+
     # print("Target Model:\n{}".format(model))
     client = []
 
@@ -75,8 +91,12 @@ def main(args, logger):
     drop_last = True if MODEL_NAME == 'DiffPool' else False
     triggers = []
 
+
+    clients = []
     all_workers_clean_test_list = []
     for i in range(args.num_workers):
+
+        ####################### old ##########################################
         local_model = copy.deepcopy(model)
         local_model = local_model.to(device)
         optimizer = torch.optim.Adam(local_model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
@@ -102,6 +122,19 @@ def main(args, logger):
                                        attack_iter=attack_loader, test_iter=test_loader, config=config,
                                        optimizer=optimizer, device=device, grad_stub=None, args=args,
                                        scheduler=scheduler))
+
+        ####################### new ##########################################
+        num_node_features = dataset.all.graph_lists[0].ndata['feat'][0].shape[0]
+        num_graph_labels = num_classes
+
+        if args.alg == 'fedstar':
+            cmodel_gc = GIN_dc(num_node_features, args.n_se, args.hidden, num_graph_labels, args.nlayer, args.dropout)
+        else:
+            cmodel_gc = GIN(num_node_features, args.hidden, num_graph_labels, args.nlayer, args.dropout)
+        optimizer = torch.optim.Adam(filter(lambda p: p.requires_grad, cmodel_gc.parameters()), lr=args.lr, weight_decay=args.weight_decay)
+        clients.append(Client_GC(model = cmodel_gc, train_Loader=  train_loader, test_clean_loader =test_loader, attack_loader = attack_loader, optimizer = optimizer,  device = device))
+
+
     # check model memory address
     for i in range(args.num_workers):
         add_m = id(client[i].model)
@@ -159,6 +192,8 @@ def main(args, logger):
             for i in range(0, args.num_mali):
                 client[i].train_iter = train_loader_list[i]
                 client[i].attack_iter = attack_loader_list[i]
+                clients[i].train_Loader = train_loader_list[i]
+                clients[i].test_attack_loader = attack_loader_list[i]
 
         train_l_sum, train_acc_sum, n, batch_count, start = 0.0, 0.0, 0, 0, time.time()
         different_clients_test_accuracy_local_trigger = []

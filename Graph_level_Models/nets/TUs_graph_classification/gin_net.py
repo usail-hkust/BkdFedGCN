@@ -80,3 +80,133 @@ class GINNet(nn.Module):
         criterion = nn.CrossEntropyLoss()
         loss = criterion(pred, label)
         return loss
+
+
+class serverGINNet_dc(nn.Module):
+
+    def __init__(self, net_params):
+        super().__init__()
+        in_dim = net_params['in_dim']
+        hidden_dim = net_params['hidden_dim']
+        n_classes = net_params['n_classes']
+        dropout = net_params['dropout']
+        self.n_layers = net_params['L']
+        n_mlp_layers = net_params['n_mlp_GIN']  # GIN
+        learn_eps = net_params['learn_eps_GIN']  # GIN
+        neighbor_aggr_type = net_params['neighbor_aggr_GIN']  # GIN
+        readout = net_params['readout']  # this is graph_pooling_type
+        batch_norm = net_params['batch_norm']
+        residual = net_params['residual']
+
+        # List of MLPs
+        self.ginlayers = torch.nn.ModuleList()
+
+        self.embedding_h = nn.Linear(in_dim, hidden_dim)
+
+        self.embedding_s = nn.Linear(in_dim, hidden_dim)
+
+        for layer in range(self.n_layers):
+            mlp = MLP(n_mlp_layers, hidden_dim + hidden_dim, hidden_dim, hidden_dim)
+            self.ginlayers.append(GINLayer(ApplyNodeFunc(mlp), neighbor_aggr_type,
+                                           dropout, batch_norm, residual, 0, learn_eps))
+
+        for layer in range(self.n_layers):
+            mlp = MLP(n_mlp_layers, hidden_dim, hidden_dim, hidden_dim)
+            self.ginlayers_s.append(GINLayer(ApplyNodeFunc(mlp), neighbor_aggr_type,
+                                             dropout, batch_norm, residual, 0, learn_eps))
+
+
+
+
+
+
+
+
+class GINNet_dc(nn.Module):
+
+    def __init__(self, net_params):
+        super().__init__()
+        in_dim = net_params['in_dim']
+        hidden_dim = net_params['hidden_dim']
+        n_classes = net_params['n_classes']
+        dropout = net_params['dropout']
+        self.n_layers = net_params['L']
+        n_mlp_layers = net_params['n_mlp_GIN']  # GIN
+        learn_eps = net_params['learn_eps_GIN']  # GIN
+        neighbor_aggr_type = net_params['neighbor_aggr_GIN']  # GIN
+        readout = net_params['readout']  # this is graph_pooling_type
+        batch_norm = net_params['batch_norm']
+        residual = net_params['residual']
+
+        # List of MLPs
+        self.ginlayers = torch.nn.ModuleList()
+
+        self.embedding_h = nn.Linear(in_dim, hidden_dim)
+
+        self.embedding_s = nn.Linear(in_dim, hidden_dim)
+
+
+        for layer in range(self.n_layers):
+            mlp = MLP(n_mlp_layers, hidden_dim + hidden_dim, hidden_dim, hidden_dim)
+            self.ginlayers.append(GINLayer(ApplyNodeFunc(mlp), neighbor_aggr_type,
+                                           dropout, batch_norm, residual, 0, learn_eps))
+
+
+        for layer in range(self.n_layers):
+            mlp = MLP(n_mlp_layers, hidden_dim, hidden_dim, hidden_dim)
+            self.ginlayers_s.append(GINLayer(ApplyNodeFunc(mlp), neighbor_aggr_type,
+                                           dropout, batch_norm, residual, 0, learn_eps))
+
+
+
+
+        # Linear function for graph poolings (readout) of output of each layer
+        # which maps the output of different layers into a prediction score
+        self.linears_prediction = torch.nn.ModuleList()
+
+        for layer in range(self.n_layers + 1):
+            self.linears_prediction.append(nn.Linear(hidden_dim + hidden_dim, n_classes))
+
+        if readout == 'sum':
+            self.pool = SumPooling()
+        elif readout == 'mean':
+            self.pool = AvgPooling()
+        elif readout == 'max':
+            self.pool = MaxPooling()
+        else:
+            raise NotImplementedError
+
+    def forward(self, g, h, e, s):
+
+        h = self.embedding_h(h)
+        s = self.embedding_s(s)
+
+        # list of hidden representation at each layer (including input)
+
+        hidden_rep = [torch.cat((h, s), -1)]
+
+        for i in range(self.n_layers):
+            h = torch.cat((h, s), -1)
+            h = self.ginlayers[i](g, h)
+
+            s = self.ginlayers_s[i](g, s)
+            s = torch.tanh(s)
+
+            hidden_rep.append(h)
+
+
+
+
+        score_over_layer = 0
+
+        # perform pooling over all nodes in each graph in every layer
+        for i, h in enumerate(hidden_rep):
+            pooled_h = self.pool(g, h)
+            score_over_layer += self.linears_prediction[i](pooled_h)
+
+        return score_over_layer
+
+    def loss(self, pred, label):
+        criterion = nn.CrossEntropyLoss()
+        loss = criterion(pred, label)
+        return loss

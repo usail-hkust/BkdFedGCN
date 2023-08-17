@@ -398,6 +398,7 @@ def main(args, logger):
     for i in range(args.num_workers):
         if i in rs:
             idx_atk = client_idx_atk[i]
+            client_data[i].y = client_data[i].y.to(device)
             induct_x, induct_edge_index, induct_edge_weights = Backdoor_model_list[i].inject_trigger(client_idx_atk[i], client_poison_x[i], client_induct_edge_index[i],
                                                                                     client_induct_edge_weights[i], device)
 
@@ -406,9 +407,12 @@ def main(args, logger):
             print("ASR: {:.4f}".format(train_attach_rate))
             overall_malicious_train_attach_rate.append(train_attach_rate.cpu().numpy())
             idx_atk = idx_atk.to(device)
-            data.y = data.y.to(device)
+            flip_y = client_data[i].y[idx_atk].to(device)
+            #print("idx_atk", idx_atk)
+            #print("(data.y[idx_atk] != args.target_class).nonzero().flatten()",data.y[idx_atk])
 
-            flip_idx_atk = idx_atk[(data.y[idx_atk] != args.target_class).nonzero().flatten()]
+            flip_idx_atk = idx_atk[(flip_y != args.target_class).nonzero().flatten()]
+
             flip_asr = (output.argmax(dim=1)[flip_idx_atk] == args.target_class).float().mean()
             print("Flip ASR: {:.4f}/{} nodes".format(flip_asr, flip_idx_atk.shape[0]))
             overall_malicious_train_flip_asr.append(flip_asr.cpu().numpy())

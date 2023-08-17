@@ -8,10 +8,10 @@ from torch_geometric.datasets import TUDataset
 from torch_geometric.loader import DataLoader
 from torch_geometric.transforms import OneHotDegree
 
-from Graph_level_Models.fedlib.models import GIN, serverGIN, GIN_dc, serverGIN_dc
-from Graph_level_Models.fedlib.server import Server
-from Graph_level_Models.fedlib.client import Client_GC
-from Graph_level_Models.fedlib.utils import get_maxDegree, get_stats, split_data, get_numGraphLabels, init_structure_encoding
+from Graph_level_Models.aggregators.fedstarlib.models import GIN, serverGIN, GIN_dc, serverGIN_dc
+from Graph_level_Models.aggregators.fedstarlib.server import Server
+from Graph_level_Models.aggregators.fedstarlib.client import Client_GC
+from Graph_level_Models.aggregators.fedstarlib.utils import get_maxDegree, get_stats, split_data, get_numGraphLabels, init_structure_encoding
 
 from scipy.special import rel_entr
 import scipy
