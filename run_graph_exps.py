@@ -1,5 +1,5 @@
 from Graph_level_Models.helpers.config import args_parser
-from backdoor_graph_clf import  main as backdoor_main
+
 from Graph_level_Models.helpers.metrics_utils import log_test_results
 import numpy as np
 import json
@@ -17,6 +17,12 @@ def main(args):
     with open(args.config) as f:
         config = json.load(f)
     model_name = config['model']
+    if args.defense == "scaffold":
+        from backdoor_graph_scaffold import main as backdoor_main
+    else:
+        from backdoor_graph_clf import main as backdoor_main
+
+
     fed_name = "Fed_alg-"+args.defense + "_"
     # 'data-{}_model-{}_IID-{}_num_workers-{}_num_mali-{}_epoch_backdoor-{}_frac_of_avg-{}_trigger_type-{}_trigger_position-{}_poisoning_intensity-{}'
     file_name = fed_name +'D-{}_M-{}_IID-{}_NW-{}_NM-{}_EB-{}_FA-{}_TPye-{}_TPo-{}_PI-{}'.format(

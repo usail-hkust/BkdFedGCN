@@ -39,6 +39,7 @@ def update_global(global_model, delta_models,args):
 
     global_model.load_state_dict(state_dict, strict=True)
     return global_model
+
 def update_global_control(control, delta_controls):
     new_control = copy.deepcopy(control)
     for name, c in control.items():
@@ -212,6 +213,8 @@ def main(args, logger):
 
 
     weight_history = []
+    delta_models = {}
+    delta_controls = {}
     for epoch in range(args.epochs):
         print('epoch:', epoch)
 
@@ -226,14 +229,27 @@ def main(args, logger):
                 client[i].train_iter = train_loader_list[i]
                 client[i].attack_iter = attack_loader_list[i]
 
-        train_l_sum, train_acc_sum, n, batch_count, start = 0.0, 0.0, 0, 0, time.time()
-        different_clients_test_accuracy_local_trigger = []
+
 
         for i in range(args.num_workers):
-            att_list = []
-            train_loss, train_acc, test_loss, test_acc = client[i].gnn_train()
-            different_clients_test_accuracy_local_trigger.append(test_acc)
-            client[i].scheduler.step()
+            # att_list = []
+            # train_loss, train_acc, test_loss, test_acc = client[i].gnn_train()
+            # different_clients_test_accuracy_local_trigger.append(test_acc)
+            # client[i].scheduler.step()
+            train_loss, test_loss, train_acc, test_acc,\
+            client_control, delta_control, delta_model = scaffold(global_model=global_model,
+                                                                  server_control=server_control,
+                                                                  client_control=client_controls[i],
+                                                                  model= model_list[i],
+                                                                  train_iter= client[i].train_iter,
+                                                                  test_iter= client[i].test_iter,
+                                                                  device=device,
+                                                                  args=args)
+
+            client_controls[i] = copy.deepcopy(client_control)
+            delta_models[i] = copy.deepcopy(delta_model)
+            delta_controls[i] = copy.deepcopy(delta_control)
+
             print('Client %d, loss %.4f, train acc %.3f, test loss %.4f, test acc %.3f'
                   % (i, train_loss, train_acc, test_loss, test_acc))
 
@@ -250,70 +266,30 @@ def main(args, logger):
                     worker_results[f"client_{i}"][ele] = test_acc
 
             for j in range(len(triggers)):
-                tmp_acc = gnn_evaluate_accuracy(attack_loader_list[j], client[i].model)
+                tmp_acc = gnn_evaluate_accuracy(attack_loader_list[j], model_list[i])
                 print('Client %d with local trigger %d: %.3f' % (i, j, tmp_acc))
-                att_list.append(tmp_acc)
+                #att_list.append(tmp_acc)
 
 
         # wandb logger
         logger.log(worker_results)
 
-        selected_clients = random.sample(client, args.num_selected_models)
+        #selected_clients = random.sample(client, args.num_selected_models)
         # if there is a defense applied
-        if args.defense == 'foolsgold':
-            weights = []
-            for i in range(args.num_workers):
-                weights.append(client[i].get_weights())
-                weight_history.append(client[i].get_weights())
-            result, weight_history, alpha = foolsgold(args, weight_history, weights)
-            for i in range(args.num_workers):
-                client[i].set_weights(weights=result)
-                client[i].upgrade()
-        elif args.defense == 'fedavg':
-             global_model = fed_avg(global_model,selected_clients, args)
-             # send to local model
-             for param_tensor in global_model.state_dict():
-                 global_para = global_model.state_dict()[param_tensor]
-                 for local_client in client:
-                     local_client.model.state_dict()[param_tensor].copy_(global_para)
-        elif args.defense == 'fedopt':
-             global_model = fed_opt(global_model,selected_clients, args)
-             # send to local model
-             for param_tensor in global_model.state_dict():
-                 global_para = global_model.state_dict()[param_tensor]
-                 for local_client in client:
-                     local_client.model.state_dict()[param_tensor].copy_(global_para)
-        else:
-            weights = []
-            for i in range(args.num_workers):
-                weights.append(client[i].get_weights())
-                weight_history.append(client[i].get_weights())
-            result, weight_history, alpha = foolsgold(args, weight_history, weights)
-            result = server_robust_agg(args, weights)
-            for i in range(args.num_workers):
-                client[i].set_weights(weights=result)
-                client[i].upgrade()
-
-
-        # evaluate the global model: test_acc
-        test_acc = gnn_evaluate_accuracy(client[0].test_iter, client[0].model)
-        print('Global Test Acc: %.3f' % test_acc)
-
-        # inject triggers into the testing data
-        if args.num_mali > 0 and epoch >= args.epoch_backdoor:
-            local_att_acc = []
-            for i in range(args.num_mali):
-                tmp_acc = gnn_evaluate_accuracy(attack_loader_list[i], client[0].model)
-                print('Global model with local trigger %d: %.3f' % (i, tmp_acc))
-                local_att_acc.append(tmp_acc)
+        global_model = update_global(global_model, delta_models, args)
+        new_control = update_global_control(
+            control=server_control,
+            delta_controls=delta_controls,
+        )
+        server_control = copy.deepcopy(new_control)
 
 
 
-    # clean accuracy , poison accuracy, attack success rate
+
     # average all the workers
     all_clean_acc_list = []
     for i in range(args.num_workers):
-        tmp_acc = gnn_evaluate_accuracy(all_workers_clean_test_list[i], client[i].model)
+        tmp_acc = gnn_evaluate_accuracy(all_workers_clean_test_list[i], model_list[i])
         print('Client %d with clean accuracy: %.3f' % (i,  tmp_acc))
         all_clean_acc_list.append(tmp_acc)
 
@@ -322,7 +298,7 @@ def main(args, logger):
 
     local_attack_success_rate_list = []
     for i in range(args.num_mali):
-        tmp_acc = gnn_evaluate_accuracy(attack_loader_list[i], client[i].model)
+        tmp_acc = gnn_evaluate_accuracy(attack_loader_list[i], model_list[i])
         print('Malicious client %d with local trigger, attack success rate: %.4f' % (i, tmp_acc))
         local_attack_success_rate_list.append(tmp_acc)
     average_local_attack_success_rate_acc = np.mean(np.array(local_attack_success_rate_list))
@@ -330,7 +306,7 @@ def main(args, logger):
 
     local_clean_acc_list = []
     for i in range(args.num_mali):
-        tmp_acc = gnn_evaluate_accuracy(test_clean_loader_list[i], client[i].model)
+        tmp_acc = gnn_evaluate_accuracy(test_clean_loader_list[i], model_list[i])
         print('Malicious client %d with clean data, clean accuracy: %.4f' % (i, tmp_acc))
 
         local_clean_acc_list.append(tmp_acc)
@@ -338,7 +314,7 @@ def main(args, logger):
 
     local_unchanged_acc_list = []
     for i in range(args.num_mali):
-        tmp_acc = gnn_evaluate_accuracy(test_unchanged_loader_list[i], client[i].model)
+        tmp_acc = gnn_evaluate_accuracy(test_unchanged_loader_list[i], model_list[i])
         print('Malicious client %d with unchanged data, the unchanged clean accuracy: %.3f' % (i, tmp_acc))
         local_unchanged_acc_list.append(tmp_acc)
     average_local_unchanged_acc = np.mean(np.array(local_unchanged_acc_list))
@@ -349,7 +325,7 @@ def main(args, logger):
     else:
         for i in range(args.num_mali):
             for j in range(args.num_workers - args.num_mali):
-                tmp_acc = gnn_evaluate_accuracy(attack_loader_list[i], client[args.num_mali+j].model)
+                tmp_acc = gnn_evaluate_accuracy(attack_loader_list[i], model_list[args.num_mali+j])
                 print('Clean client %d with  trigger %d: %.3f' % (args.num_mali+j, i, tmp_acc))
                 transfer_attack_success_rate_list.append(tmp_acc)
         average_transfer_attack_success_rate = np.mean(np.array(transfer_attack_success_rate_list))

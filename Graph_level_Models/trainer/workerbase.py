@@ -56,7 +56,7 @@ class WorkerBase(metaclass=ABCMeta):
 
     ## GNN model training:
 
-    def gnn_train(self): # This function is for local train one epoch using local dataset on client
+    def gnn_train(self,global_model,args): # This function is for local train one epoch using local dataset on client
         """ General local training methods """
         self.model.train()
         self.acc_record = [0]
@@ -73,6 +73,15 @@ class WorkerBase(metaclass=ABCMeta):
             self.optimizer.zero_grad()
             batch_scores = self.model.forward(batch_graphs, batch_x, batch_e)
             l = self.model.loss(batch_scores, batch_labels)
+            if args.defense == "fedprox":
+                # compute proximal_term
+                proximal_term = 0.0
+                for w, w_t in zip(self.model.parameters(), global_model.parameters()):
+                    proximal_term += (w - w_t).norm(2)
+
+                l = l + (args.mu / 2) * proximal_term
+
+
             l.backward()
             self.optimizer.step()
             train_l_sum += l.cpu().item()

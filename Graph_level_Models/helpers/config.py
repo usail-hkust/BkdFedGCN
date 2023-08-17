@@ -20,7 +20,7 @@ def args_parser():
     parser.add_argument('--glo_lr', type=float, default=3e-4, help='the learning rate  of global model in FedOPT')
     parser.add_argument('--max_grad_norm', type=float, default=100.0, help='max grad norm')
     parser.add_argument('--scal_lr', type=float, default=0.01, help='the learning rate  of global model in FedOPT')
-
+    parser.add_argument('--local_steps', type=int, default=1, help='local steps for scaffold')
 
     # argument for backdoor attack in GNN model
     parser.add_argument('--dataset', type=str, default="IMDB-BINARY", help='name of dataset')

@@ -68,7 +68,7 @@ def main(args, logger):
 
     model = gnn_model(MODEL_NAME, net_params)
     global_model = gnn_model(MODEL_NAME, net_params)
-
+    global_model = global_model.to(device)
     client = []
 
     # logger data
@@ -168,7 +168,7 @@ def main(args, logger):
 
         for i in range(args.num_workers):
             att_list = []
-            train_loss, train_acc, test_loss, test_acc = client[i].gnn_train()
+            train_loss, train_acc, test_loss, test_acc = client[i].gnn_train(global_model,args)
             different_clients_test_accuracy_local_trigger.append(test_acc)
             client[i].scheduler.step()
             print('Client %d, loss %.4f, train acc %.3f, test loss %.4f, test acc %.3f'
@@ -215,6 +215,13 @@ def main(args, logger):
                      local_client.model.state_dict()[param_tensor].copy_(global_para)
         elif args.defense == 'fedopt':
              global_model = fed_opt(global_model,selected_clients, args)
+             # send to local model
+             for param_tensor in global_model.state_dict():
+                 global_para = global_model.state_dict()[param_tensor]
+                 for local_client in client:
+                     local_client.model.state_dict()[param_tensor].copy_(global_para)
+        elif args.defense == 'fedprox':
+             global_model = fed_avg(global_model,selected_clients, args)
              # send to local model
              for param_tensor in global_model.state_dict():
                  global_para = global_model.state_dict()[param_tensor]

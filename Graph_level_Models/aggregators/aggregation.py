@@ -91,20 +91,25 @@ def fed_opt(global_model,local_models,args):
 
     return global_model
 ########################################################################
-def init_control(model,device):
-    """ a dict type: {name: params}
-    """
-    control = {
-        name: torch.zeros_like(
-            p.data
-        ).to(device) for name, p in model.state_dict().items()
-    }
+# def init_control(model,device):
+#     """ a dict type: {name: params}
+#     """
+#     control = {
+#         name: torch.zeros_like(
+#             p.data
+#         ).to(device) for name, p in model.state_dict().items()
+#     }
+#     return control
+
+def init_control(model, device):
+    """ a dict type: {name: params} """
+    control = {k: torch.zeros_like(v.data).to(device) for k, v in model.named_parameters()}
     return control
 def get_delta_model(model0, model1):
     """ return a dict: {name: params}
     """
     state_dict = {}
-    for name, param0 in model0.state_dict().items():
+    for name, param0 in model0.named_parameters():
         param1 = model1.state_dict()[name]
         state_dict[name] = param0.detach() - param1.detach()
     return state_dict
@@ -121,7 +126,16 @@ class ScaffoldOptimizer(torch.optim.Optimizer):
         loss = None
         if closure is not None:
             loss = closure
-
+        #
+        # for group in self.param_groups:
+        #     for p, c, ci in zip(group['params'], server_control.values(), client_control.values()):
+        #         if p.grad is None:
+        #             continue
+        #         print("p.grad.data",p.grad.data.shape)
+        #         print("c.data", c.data.shape)
+        #         print("ci.data", ci.data.shape)
+        #         dp = p.grad.data + c.data - ci.data
+        #         p.data = p.data - dp.data * group['lr']
         for group in self.param_groups:
             for p, c, ci in zip(group['params'], server_control.values(), client_control.values()):
                 if p.grad is None:
@@ -129,7 +143,6 @@ class ScaffoldOptimizer(torch.optim.Optimizer):
                 dp = p.grad.data + c.data - ci.data
                 p.data = p.data - dp.data * group['lr']
 
-        return loss
 
 def update_local(model,server_control, client_control, global_model,train_iter,test_iter, device,
                  args):
@@ -222,7 +235,8 @@ def scaffold(global_model,server_control,client_control,model,
                  train_iter, test_iter, device,
                  args):
 
-
+    global_model = global_model.to(device)
+    model = model.to(device)
     # update local with control variates / ScaffoldOptimizer
     delta_model, local_steps,loss_train,  acc_train,loss_val, acc_val = update_local(model, server_control, client_control, global_model, train_iter,
                                                                                      test_iter, device,args)
