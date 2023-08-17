@@ -2,7 +2,7 @@ import  random
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from Node_level_Models.helpers.func_utils import accuracy
+from Graph_level_Models.helpers.metrics import accuracy_TU as accuracy
 from copy import deepcopy
 import copy
 
@@ -131,9 +131,8 @@ class ScaffoldOptimizer(torch.optim.Optimizer):
 
         return loss
 
-def update_local(model,server_control, client_control, global_model,
-                 features, edge_index, edge_weight, labels, idx_train,
-                 args, idx_val=None, train_iters=200):
+def update_local(model,server_control, client_control, global_model,train_iter,test_iter, device,
+                 args):
 
     glo_model = copy.deepcopy(global_model)
 
@@ -143,50 +142,63 @@ def update_local(model,server_control, client_control, global_model,
         weight_decay=args.weight_decay
     )
 
-    best_loss_val = 100
-    best_acc_val = 0
+    for _ in range(args.local_steps):
+        train_l_sum, train_acc_sum, train_n, train_batch_count = 0.0, 0.0, 0, 0
+        for batch_graphs, batch_labels in  train_iter:
+            model.train()
+            batch_graphs = batch_graphs.to(device)
+            batch_x = batch_graphs.ndata['feat'].to(device)  # num x feat
+            batch_e = batch_graphs.edata['feat'].to(device)
 
-    for i in range(train_iters):
-        model.train()
+            batch_labels = batch_labels.to(torch.long)
+            batch_labels = batch_labels.to(device)
+
+            batch_scores = model.forward(batch_graphs, batch_x, batch_e)
+            l = model.loss(batch_scores, batch_labels)
+
+            optimizer.zero_grad()
+            l.backward()
+            nn.utils.clip_grad_norm_(
+                model.parameters(), args.max_grad_norm
+            )
+            optimizer.step(
+                server_control=server_control,
+                client_control=client_control
+            )
+            train_l_sum += l.cpu().item()
+            train_acc_sum += accuracy(batch_scores, batch_labels)
+            train_n += batch_labels.size(0)
+            train_batch_count += 1
+
+            model.eval()
+            with torch.no_grad():
+                test_l_sum, test_acc_sum, test_n, test_batch_count = 0.0, 0.0, 0, 0
+                for batch_graphs, batch_labels in test_iter:
+                    batch_graphs = batch_graphs.to(device)
+                    batch_x = batch_graphs.ndata['feat'].to(device)  # num x feat
+                    batch_e = batch_graphs.edata['feat'].to(device)
+
+                    batch_labels = batch_labels.to(torch.long)
+                    batch_labels = batch_labels.to(device)
+
+                    batch_scores = model.forward(batch_graphs, batch_x, batch_e)
+                    l = model.loss(batch_scores, batch_labels)
 
 
-        output = model.forward(features, edge_index, edge_weight)
-        loss_train = F.nll_loss(output[idx_train], labels[idx_train])
-
-        optimizer.zero_grad()
-        loss_train.backward()
-        nn.utils.clip_grad_norm_(
-            model.parameters(), args.max_grad_norm
-        )
-        optimizer.step(
-            server_control=server_control,
-            client_control=client_control
-        )
-
-
-        model.eval()
-        with torch.no_grad():
-            output = model.forward(features, edge_index, edge_weight)
-            loss_val = F.nll_loss(output[idx_val], labels[idx_val])
-            acc_val = accuracy(output[idx_val], labels[idx_val])
-            acc_train = accuracy(output[idx_train], labels[idx_train])
-
-
-        if acc_val > best_acc_val:
-            best_acc_val = acc_val
-
-            weights = deepcopy(model.state_dict())
-            model.load_state_dict(weights)
+                    test_l_sum += l.cpu().item()
+                    test_acc_sum += accuracy(batch_scores, batch_labels)
+                    test_n += batch_labels.size(0)
+                    test_batch_count += 1
 
 
 
 
-    delta_model = get_delta_model(glo_model, model)
+        delta_model = get_delta_model(glo_model, model)
 
 
-    local_steps = train_iters
+    local_steps = args.local_steps
 
-    return delta_model, local_steps,loss_train.item(), loss_val.item(), acc_train, acc_val
+    return delta_model, local_steps,train_l_sum / train_batch_count, train_acc_sum / train_n, test_l_sum / test_batch_count, test_acc_sum / train_n
 
 
 def update_local_control(delta_model, server_control,
@@ -207,17 +219,13 @@ def update_local_control(delta_model, server_control,
 
 
 def scaffold(global_model,server_control,client_control,model,
-                 features, edge_index, edge_weight, labels, idx_train,
-                 args, idx_val=None, train_iters=200):
+                 train_iter, test_iter, device,
+                 args):
 
 
     # update local with control variates / ScaffoldOptimizer
-    delta_model, local_steps,loss_train, loss_val, acc_train, acc_val = update_local(
-        model, server_control, client_control, global_model,
-        features, edge_index, edge_weight, labels, idx_train,
-        args, idx_val=idx_val, train_iters=train_iters
-    )
-
+    delta_model, local_steps,loss_train,  acc_train,loss_val, acc_val = update_local(model, server_control, client_control, global_model, train_iter,
+                                                                                     test_iter, device,args)
 
     client_control, delta_control = update_local_control(
         delta_model=delta_model,

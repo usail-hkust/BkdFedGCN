@@ -113,6 +113,12 @@ class Backdoor:
         print("Start generating trigger by {}".format(args.trigger_type))
         if args.trigger_type == "renyi":
             G_trigger = nx.erdos_renyi_graph(trigger_size, args.density, directed=False)
+            if G_trigger.edges():
+                G_trigger =  G_trigger
+            else:
+                G_trigger = nx.erdos_renyi_graph(trigger_size, 1.0, directed=False)
+
+
         elif args.trigger_type == "ws":
             G_trigger = nx.watts_strogatz_graph(trigger_size, args.degree, args.density)
         elif args.trigger_type == "ba":
