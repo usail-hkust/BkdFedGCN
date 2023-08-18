@@ -22,6 +22,8 @@ def args_parser():
     parser.add_argument('--scal_lr', type=float, default=0.01, help='the learning rate  of global model in FedOPT')
     parser.add_argument('--local_steps', type=int, default=1, help='local steps for scaffold')
 
+
+
     # argument for backdoor attack in GNN model
     parser.add_argument('--dataset', type=str, default="IMDB-BINARY", help='name of dataset')
     parser.add_argument('--datadir', type=str, default="./Data", help='path to save the dataset')
@@ -48,6 +50,10 @@ def args_parser():
     parser.add_argument('--seed', type=int, default=0, help='0-9')
     parser.add_argument('--proj_name', type=str, default="BkdFedGCN", help='wandb logger project name')
 
+    # other federated algorithm  settings (defense)
+    parser.add_argument('--agg_num', type=int, default=1, help='aggregation number for multi-krum and bulyan')
+    parser.add_argument('--excluded_num', type=int, default=1, help='excluded number for  bulyan')
+    parser.add_argument('--excluded_ratio', type=float, default=0.2, help='excluded number for  bulyan')
 
 
     args = parser.parse_args()
