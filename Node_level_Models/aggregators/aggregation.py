@@ -305,9 +305,9 @@ def _calculate_distance(model_a, model_b):
     Calculate the Euclidean distance between two given model parameter lists
     """
     distance = 0.0
-    model_a_params,model_b_params = model_a.parameters(), model_b.parameters()
-    for param_a, param_b in zip(model_a_params, model_b_params):
-        distance += torch.dist(param_a, param_b, p=2)
+    #model_a_params,model_b_params = model_a.parameters(), model_b.parameters()
+    for param_a, param_b in zip(model_a.parameters(), model_b.parameters()):
+        distance += torch.dist(param_a.data, param_b.data, p=2)
 
     return distance
 def fed_multi_krum(global_model, client_models, args):
@@ -318,8 +318,8 @@ def fed_multi_krum(global_model, client_models, args):
     assert 2 * byzantine_node_num + 2 < client_num, \
         "it should be satisfied that 2*byzantine_node_num + 2 < client_num"
     # each_model: (sample_size, model_para)
-    models_para = [model.parameters() for model in client_models]
-    krum_scores = _calculate_score(models_para, args)
+    #models_para = [model.parameters() for model in client_models]
+    krum_scores = _calculate_score(client_models, args)
     index_order = torch.sort(krum_scores)[1].numpy()
     reliable_models = list()
     reliable_client_train_loaders = []
@@ -363,10 +363,10 @@ def fed_bulyan(global_model, client_models, args):
     # assert 4 * byzantine_node_num + 3 <= client_num, \
     #     "it should be satisfied that 4 * byzantine_node_num + 3 <= client_num"
 
+    # models_para = [model.parameters() for model in client_models]
 
-   # each_model: (sample_size, model_para)
-    models_para = [model.parameters() for model in client_models]
-    krum_scores = _calculate_score(models_para, args)
+
+    krum_scores = _calculate_score(client_models, args)
     index_order = torch.sort(krum_scores)[1].numpy()
     reliable_models = []
     #reliable_client_train_loaders = []

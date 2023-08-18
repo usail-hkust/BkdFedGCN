@@ -384,11 +384,13 @@ def main(args, logger):
         elif args.agg_method == "FedProx":
              # the aggregation is same with the FedAvg and the local model add the regularization
             global_model = fed_avg(global_model,selected_models,args)
+        elif args.agg_method == "fed_median":
+            global_model = fed_median(global_model,selected_models,args)
         elif args.agg_method == "fed_trimmedmean":
             global_model = fed_trimmedmean(global_model,selected_models,args)
-        elif args.agg_method == "fedMedian":
-            global_model = fed_trimmedmean(global_model,selected_models,args)
         elif args.agg_method == "fed_multi_krum":
+            global_model = fed_multi_krum(global_model,selected_models,args)
+        elif args.agg_method == "fed_krum":
             global_model = fed_multi_krum(global_model,selected_models,args)
         elif args.agg_method == "fed_bulyan":
             global_model = fed_bulyan(global_model,selected_models,args)

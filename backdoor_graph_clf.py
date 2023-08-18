@@ -248,6 +248,13 @@ def main(args, logger):
                  global_para = global_model.state_dict()[param_tensor]
                  for local_client in client:
                      local_client.model.state_dict()[param_tensor].copy_(global_para)
+        elif args.defense == 'fed_krum':
+             global_model = fed_multi_krum(global_model,selected_clients, args)
+             # send to local model
+             for param_tensor in global_model.state_dict():
+                 global_para = global_model.state_dict()[param_tensor]
+                 for local_client in client:
+                     local_client.model.state_dict()[param_tensor].copy_(global_para)
         elif args.defense == 'fed_bulyan':
              global_model = fed_bulyan(global_model,selected_clients, args)
              # send to local model

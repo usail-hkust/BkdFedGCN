@@ -167,7 +167,7 @@ python run_graph_exps.py --dataset NCI1 \
 ####  Backdoor attack  in Federated GNNs  on other  federated algorithms
 running command for training:
 ```python 
---defense fedavg, fedopt, fedprox, fed_trimmedmean, fedMedian, fed_multi_krum, fed_bulyan
+--defense fedavg, fedopt, fedprox, fed_trimmedmean, fedMedian, fed_krum，fed_multi_krum, fed_bulyan
 ```
 
 ```python
