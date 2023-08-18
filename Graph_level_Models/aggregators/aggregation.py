@@ -264,6 +264,8 @@ def fed_median(global_model,client_models, args):
 
     The code is adapted from https://github.com/alibaba/FederatedScope/blob/master/federatedscope/core/aggregators/median_aggregator.py
     """
+    client_models = [client.model for client in client_models]
+
     client_parameters = [model.parameters() for model in client_models]
     for global_param, *client_params in zip(global_model.parameters(),
                                             *client_parameters):
@@ -284,7 +286,7 @@ def fed_trimmedmean(global_model,client_models, args):
     The code is adapted from https://github.com/alibaba/FederatedScope/blob/master/federatedscope/core/aggregators/trimmedmean_aggregator.py
     """
 
-
+    client_models = [client.model for client in client_models]
     client_parameters = [model.parameters() for model in client_models]
     excluded_ratio = args.excluded_ratio
     excluded_num = int(len(client_models) * excluded_ratio)
@@ -304,6 +306,7 @@ def _calculate_score( models,args):
     """
     Calculate Krum scores
     """
+
     byzantine_node_num = args.num_mali
     model_num = len(models)
     closest_num = model_num - byzantine_node_num - 2
@@ -333,6 +336,7 @@ def _calculate_distance(model_a, model_b):
 
     return distance
 def fed_multi_krum(global_model, client_models, args):
+    client_models = [client.model for client in client_models]
     federate_ignore_weight = False
     byzantine_node_num = args.num_mali
     client_num = len(client_models)
@@ -366,7 +370,7 @@ def fed_multi_krum(global_model, client_models, args):
         global_parameter.data = client_parameter
 
     return global_model
-###################################### fed_multi_krum ##############################################################
+###################################### fed_bulyan ##############################################################
 def fed_bulyan(global_model, client_models, args):
     """
     Implementation of Bulyan refers to `The Hidden Vulnerability
@@ -376,7 +380,7 @@ def fed_bulyan(global_model, client_models, args):
 
     It combines the MultiKrum aggregator and the treamedmean aggregator
     """
-
+    client_models = [client.model for client in client_models]
     agg_num = args.agg_num
     byzantine_node_num = args.num_mali
     client_num = len(client_models)
