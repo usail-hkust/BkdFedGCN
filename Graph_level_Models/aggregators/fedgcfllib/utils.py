@@ -1,11 +1,8 @@
 import torch
-from torch_geometric.utils import to_networkx, degree, to_dense_adj, to_scipy_sparse_matrix
+from torch_geometric.utils import to_networkx, degree
 import torch.nn.functional as F
 from sklearn.model_selection import train_test_split
-from scipy import sparse as sp
-import dgl
-import numpy as np
-import networkx as nx
+
 
 def convert_to_nodeDegreeFeatures(graphs):
     graph_infos = []
@@ -90,63 +87,3 @@ def get_stats(df, ds, graphs_train, graphs_val=None, graphs_test=None):
         df.loc[ds, 'avgEdges_test'] = avgEdges
 
     return df
-
-def init_structure_encoding(args, gs, type_init):
-
-    if type_init == 'rw':
-        for g in gs:
-            # Geometric diffusion features with Random Walk
-            A = to_scipy_sparse_matrix(g.edge_index, num_nodes=g.num_nodes)
-            D = (degree(g.edge_index[0], num_nodes=g.num_nodes) ** -1.0).numpy()
-
-            Dinv=sp.diags(D)
-            RW=A*Dinv
-            M=RW
-
-            SE_rw=[torch.from_numpy(M.diagonal()).float()]
-            M_power=M
-            for _ in range(args.n_rw-1):
-                M_power=M_power*M
-                SE_rw.append(torch.from_numpy(M_power.diagonal()).float())
-            SE_rw=torch.stack(SE_rw,dim=-1)
-
-            g['stc_enc'] = SE_rw
-
-    elif type_init == 'dg':
-        for g in gs:
-            # PE_degree
-            g_dg = (degree(g.edge_index[0], num_nodes=g.num_nodes)).numpy().clip(1, args.n_dg)
-            SE_dg = torch.zeros([g.num_nodes, args.n_dg])
-            for i in range(len(g_dg)):
-                SE_dg[i,int(g_dg[i]-1)] = 1
-
-            g['stc_enc'] = SE_dg
-
-    elif type_init == 'rw_dg':
-        for g in gs:
-            # SE_rw
-            A = to_scipy_sparse_matrix(g.edge_index, num_nodes=g.num_nodes)
-            D = (degree(g.edge_index[0], num_nodes=g.num_nodes) ** -1.0).numpy()
-
-            Dinv=sp.diags(D)
-            RW=A*Dinv
-            M=RW
-
-            SE=[torch.from_numpy(M.diagonal()).float()]
-            M_power=M
-            for _ in range(args.n_rw-1):
-                M_power=M_power*M
-                SE.append(torch.from_numpy(M_power.diagonal()).float())
-            SE_rw=torch.stack(SE,dim=-1)
-
-            # PE_degree
-            g_dg = (degree(g.edge_index[0], num_nodes=g.num_nodes)).numpy().clip(1, args.n_dg)
-            SE_dg = torch.zeros([g.num_nodes, args.n_dg])
-            for i in range(len(g_dg)):
-                SE_dg[i,int(g_dg[i]-1)] = 1
-
-            g['stc_enc'] = torch.cat([SE_rw, SE_dg], dim=1)
-
-    return gs
-
-

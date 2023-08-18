@@ -90,5 +90,9 @@ def args_parser():
     parser.add_argument('--glo_lr', type=float, default=3e-4, help='the learning rate  of global model in FedOPT')
     parser.add_argument('--max_grad_norm', type=float, default=100.0, help='max grad norm')
     parser.add_argument('--scal_lr', type=float, default=0.01, help='the learning rate  of global model in FedOPT')
+
+    # other federated algorithm  settings (defense)
+    parser.add_argument('--agg_num', type=int, default=1, help='aggregation number for multi-krum and bulyan')
+    parser.add_argument('--excluded_num', type=int, default=1, help='excluded number for  bulyan')
     args = parser.parse_args()
     return args

@@ -12,7 +12,7 @@ from Node_level_Models.helpers.split_graph_utils import split_Random, split_Louv
 from Node_level_Models.models.construct import model_construct
 from Node_level_Models.helpers.func_utils import prune_unrelated_edge,prune_unrelated_edge_isolated
 from Node_level_Models.data.datasets import  ogba_data,Amazon_data,Coauthor_data
-from Node_level_Models.aggregators.aggregation import fed_avg, fed_opt
+from Node_level_Models.aggregators.aggregation import fed_avg, fed_opt, fed_median, fed_trimmedmean, fed_multi_krum, fed_bulyan
 
 
 def main(args, logger):
@@ -384,6 +384,14 @@ def main(args, logger):
         elif args.agg_method == "FedProx":
              # the aggregation is same with the FedAvg and the local model add the regularization
             global_model = fed_avg(global_model,selected_models,args)
+        elif args.agg_method == "fed_trimmedmean":
+            global_model = fed_trimmedmean(global_model,selected_models,args)
+        elif args.agg_method == "fedMedian":
+            global_model = fed_trimmedmean(global_model,selected_models,args)
+        elif args.agg_method == "fed_multi_krum":
+            global_model = fed_multi_krum(global_model,selected_models,args)
+        elif args.agg_method == "fed_bulyan":
+            global_model = fed_bulyan(global_model,selected_models,args)
         else:
             raise NameError
         # send to local model

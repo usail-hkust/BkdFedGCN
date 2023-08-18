@@ -229,3 +229,169 @@ def scaffold(global_model,server_control,client_control,model,
 
 
     return loss_train, loss_val, acc_train, acc_val,client_control, delta_control, delta_model
+
+######################################defense ########################
+def fed_median(global_model,client_models, args):
+    """
+    Implementation of median refers to `Byzantine-robust distributed
+    learning: Towards optimal statistical rates`
+    [Yin et al., 2018]
+    (http://proceedings.mlr.press/v80/yin18a/yin18a.pdf)
+
+    It computes the coordinate-wise median of recieved updates from clients
+
+    The code is adapted from https://github.com/alibaba/FederatedScope/blob/master/federatedscope/core/aggregators/median_aggregator.py
+    """
+    client_parameters = [model.parameters() for model in client_models]
+    for global_param, *client_params in zip(global_model.parameters(),
+                                            *client_parameters):
+        temp = torch.stack(client_params, dim=0)
+        temp_pos, _ = torch.median(temp, dim=0)
+        temp_neg, _ = torch.median(-temp, dim=0)
+        new_temp = (temp_pos - temp_neg) / 2
+        global_param.data = new_temp
+    return global_model
+###################################### fed_trimmedmean ##############################################################
+def fed_trimmedmean(global_model,client_models, args):
+    """
+    Implementation of median refer to `Byzantine-robust distributed
+    learning: Towards optimal statistical rates`
+    [Yin et al., 2018]
+    (http://proceedings.mlr.press/v80/yin18a/yin18a.pdf)
+
+    The code is adapted from https://github.com/alibaba/FederatedScope/blob/master/federatedscope/core/aggregators/trimmedmean_aggregator.py
+    """
+
+
+    client_parameters = [model.parameters() for model in client_models]
+    excluded_ratio = args.excluded_ratio
+    excluded_num = int(len(client_models) * excluded_ratio)
+    for global_param, *client_params in zip(global_model.parameters(),
+                                            *client_parameters):
+        temp = torch.stack(client_params, dim=0)
+        pos_largest, _ = torch.topk(temp, excluded_num, dim=0)
+        neg_smallest, _ = torch.topk(-temp, excluded_num, dim=0)
+        new_stacked = torch.cat([temp, -pos_largest, neg_smallest], dim=0).sum(dim=0).float()
+        new_stacked /= len(temp) - 2 * excluded_num
+        global_param.data = new_stacked
+    return global_model
+
+###################################### fed_multi_krum ##############################################################
+
+def _calculate_score( models,args):
+    """
+    Calculate Krum scores
+    """
+    byzantine_node_num = args.num_mali
+    model_num = len(models)
+    closest_num = model_num - byzantine_node_num - 2
+
+    distance_matrix = torch.zeros(model_num, model_num)
+    for index_a in range(model_num):
+        for index_b in range(index_a, model_num):
+            if index_a == index_b:
+                distance_matrix[index_a, index_b] = float('inf')
+            else:
+                distance_matrix[index_a, index_b] = distance_matrix[
+                    index_b, index_a] = _calculate_distance(
+                    models[index_a], models[index_b])
+
+    sorted_distance = torch.sort(distance_matrix)[0]
+    krum_scores = torch.sum(sorted_distance[:, :closest_num], axis=-1)
+    return krum_scores
+
+def _calculate_distance(model_a, model_b):
+    """
+    Calculate the Euclidean distance between two given model parameter lists
+    """
+    distance = 0.0
+    model_a_params,model_b_params = model_a.parameters(), model_b.parameters()
+    for param_a, param_b in zip(model_a_params, model_b_params):
+        distance += torch.dist(param_a, param_b, p=2)
+
+    return distance
+def fed_multi_krum(global_model, client_models, args):
+    federate_ignore_weight = False
+    byzantine_node_num = args.num_mali
+    client_num = len(client_models)
+    agg_num = args.agg_num
+    assert 2 * byzantine_node_num + 2 < client_num, \
+        "it should be satisfied that 2*byzantine_node_num + 2 < client_num"
+    # each_model: (sample_size, model_para)
+    models_para = [model.parameters() for model in client_models]
+    krum_scores = _calculate_score(models_para, args)
+    index_order = torch.sort(krum_scores)[1].numpy()
+    reliable_models = list()
+    reliable_client_train_loaders = []
+    for number, index in enumerate(index_order):
+        if number < agg_num:
+            reliable_models.append(client_models[index])
+
+
+    client_parameters = [model.parameters() for model in reliable_models]
+    if  federate_ignore_weight:
+        weights = torch.as_tensor([len(train_loader) for train_loader in reliable_client_train_loaders])
+        weights = weights / weights.sum()
+    else:
+        weights = torch.as_tensor([1 for _ in range(len(reliable_models))])
+        weights = weights / weights.sum()
+
+    for model_parameter in zip(global_model.parameters(), *client_parameters):
+        global_parameter = model_parameter[0]
+        client_parameter = [client_parameter.data * weight for client_parameter, weight in
+                            zip(model_parameter[1:], weights)]
+        client_parameter = torch.stack(client_parameter, dim=0).sum(dim=0)
+        global_parameter.data = client_parameter
+
+    return global_model
+###################################### fed_bulyan ##############################################################
+def fed_bulyan(global_model, client_models, args):
+    """
+    Implementation of Bulyan refers to `The Hidden Vulnerability
+    of Distributed Learning in Byzantium`
+    [Mhamdi et al., 2018]
+    (http://proceedings.mlr.press/v80/mhamdi18a/mhamdi18a.pdf)
+
+    It combines the MultiKrum aggregator and the treamedmean aggregator
+    """
+
+    agg_num = args.agg_num
+    byzantine_node_num = args.num_mali
+    client_num = len(client_models)
+    assert 2 * byzantine_node_num + 2 < client_num, \
+        "it should be satisfied that 2*byzantine_node_num + 2 < client_num"
+    # assert 4 * byzantine_node_num + 3 <= client_num, \
+    #     "it should be satisfied that 4 * byzantine_node_num + 3 <= client_num"
+
+
+   # each_model: (sample_size, model_para)
+    models_para = [model.parameters() for model in client_models]
+    krum_scores = _calculate_score(models_para, args)
+    index_order = torch.sort(krum_scores)[1].numpy()
+    reliable_models = []
+    #reliable_client_train_loaders = []
+    for number, index in enumerate(index_order):
+        if number < agg_num:
+            reliable_models.append(client_models[index])
+
+
+    client_parameters = [model.parameters() for model in reliable_models]
+
+
+    '''
+    Sort parameter for each coordinate of the rest \theta reliable
+    local models, and find \gamma (gamma<\theta-2*self.byzantine_num)
+    parameters closest to the median to perform averaging
+    '''
+    excluded_num = args.excluded_num
+
+    for global_param, *client_params in zip(global_model.parameters(),
+                                            *client_parameters):
+        temp = torch.stack(client_params, dim=0)
+        pos_largest, _ = torch.topk(temp, excluded_num, dim=0)
+        neg_smallest, _ = torch.topk(-temp, excluded_num, dim=0)
+        new_stacked = torch.cat([temp, -pos_largest, neg_smallest], dim=0).sum(dim=0).float()
+        new_stacked /= len(temp) - 2 * excluded_num
+        global_param.data = new_stacked
+
+    return global_model

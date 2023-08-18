@@ -24,15 +24,10 @@ class Client_GC():
         self.convWeightsNorm = 0.
         self.convDWsNorm = 0.
 
-    def download_from_server(self, args, server):
+    def download_from_server(self, server):
         self.gconvNames = server.W.keys()
-        if args.alg == 'fedstar':
-            for k in server.W:
-                if '_s' in k:
-                    self.W[k].data = server.W[k].data.clone()
-        else:
-            for k in server.W:
-                self.W[k].data = server.W[k].data.clone()
+        for k in server.W:
+            self.W[k].data = server.W[k].data.clone()
 
     def cache_weights(self):
         for name in self.W.keys():
@@ -126,51 +121,12 @@ def train_gc(model, dataloaders, optimizer, local_epoch, device):
     train_loader, val_loader, test_loader = dataloaders['train'], dataloaders['val'], dataloaders['test']
     for epoch in range(local_epoch):
         model.train()
-
         total_loss = 0.
         ngraphs = 0
 
         acc_sum = 0
 
         for _, batch in enumerate(train_loader):
-            batch.to(device)
-            optimizer.zero_grad()
-            pred = model(batch)
-            label = batch.y
-            acc_sum += pred.max(dim=1)[1].eq(label).sum().item()
-            loss = model.loss(pred, label)
-            loss.backward()
-            optimizer.step()
-            total_loss += loss.item() * batch.num_graphs
-            ngraphs += batch.num_graphs
-        total_loss /= ngraphs
-        acc = acc_sum / ngraphs
-
-        loss_v, acc_v = eval_gc(model, val_loader, device)
-        loss_tt, acc_tt = eval_gc(model, test_loader, device)
-
-        losses_train.append(total_loss)
-        accs_train.append(acc)
-        losses_val.append(loss_v)
-        accs_val.append(acc_v)
-        losses_test.append(loss_tt)
-        accs_test.append(acc_tt)
-
-    return {'trainingLosses': losses_train, 'trainingAccs': accs_train, 'valLosses': losses_val, 'valAccs': accs_val,
-            'testLosses': losses_test, 'testAccs': accs_test}
-
-def train_gc_pe(model, dataloaders, optimizer, local_epoch, device):
-    losses_train, accs_train, losses_val, accs_val, losses_test, accs_test = [], [], [], [], [], []
-    train_loader, val_loader, test_loader = dataloaders['train'], dataloaders['val'], dataloaders['test']
-    for epoch in range(local_epoch):
-        model.train()
-        total_loss = 0.
-        ngraphs = 0
-
-        acc_sum = 0
-
-        for _, batch in enumerate(train_loader):
-            batch.x = torch.ones_like(batch.x)
             batch.to(device)
             optimizer.zero_grad()
             pred = model(batch)
