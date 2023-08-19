@@ -60,7 +60,8 @@ python run_node_exps.py  --model GCN\
 ###  Backdoor attack  in Federated GNNs on other federated algorithms and defense methods
 
 ```
---agg_method FedOpt, FedProx,scaffold, fed_trimmedmean, fedMedian, fed_multi_krum, fed_bulyan
+--agg_method FedOpt, FedProx,scaffold, fed_trimmedmean, fedMedian, fed_krum，
+fed_multi_krum, fed_bulyan
 ```
 
 ```
