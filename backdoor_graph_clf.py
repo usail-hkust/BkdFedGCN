@@ -319,12 +319,13 @@ def main(args, logger):
         local_clean_acc_list.append(tmp_acc)
     average_local_clean_acc = np.mean(np.array(local_clean_acc_list))
 
-    local_unchanged_acc_list = []
-    for i in range(args.num_mali):
-        tmp_acc = gnn_evaluate_accuracy(test_unchanged_loader_list[i], client[i].model)
-        print('Malicious client %d with unchanged data, the unchanged clean accuracy: %.3f' % (i, tmp_acc))
-        local_unchanged_acc_list.append(tmp_acc)
-    average_local_unchanged_acc = np.mean(np.array(local_unchanged_acc_list))
+    average_local_unchanged_acc = 0
+    # local_unchanged_acc_list = []
+    # for i in range(args.num_mali):
+    #     tmp_acc = gnn_evaluate_accuracy(test_unchanged_loader_list[i], client[i].model)
+    #     print('Malicious client %d with unchanged data, the unchanged clean accuracy: %.3f' % (i, tmp_acc))
+    #     local_unchanged_acc_list.append(tmp_acc)
+    # average_local_unchanged_acc = np.mean(np.array(local_unchanged_acc_list))
 
     transfer_attack_success_rate_list = []
     if args.num_workers-args.num_mali <= 0:
