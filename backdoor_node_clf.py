@@ -274,7 +274,11 @@ def main(args, logger):
         worker_results = {}
         for i in range(args.num_workers):
             worker_results[f"client_{i}"] = {"train_loss": None, "train_acc": None, "val_loss": None, "val_acc": None}
-
+        # send to local model
+        for param_tensor in global_model.state_dict():
+            global_para = global_model.state_dict()[param_tensor]
+            for local_model in model_list:
+                local_model.state_dict()[param_tensor].copy_(global_para)
         if epoch >= args.epoch_backdoor:
             for j in range(args.num_workers):
                 if j in rs:
@@ -396,11 +400,7 @@ def main(args, logger):
             global_model = fed_bulyan(global_model,selected_models,args)
         else:
             raise NameError
-        # send to local model
-        for param_tensor in global_model.state_dict():
-            global_para = global_model.state_dict()[param_tensor]
-            for local_model in model_list:
-                local_model.state_dict()[param_tensor].copy_(global_para)
+
 
     overall_performance = []
     overall_malicious_train_attach_rate = []
@@ -462,10 +462,11 @@ def main(args, logger):
     print("Malicious client: {}".format(rs))
     print("Average ASR: {:.4f}".format(np.array(overall_malicious_train_attach_rate).sum() / args.num_mali))
     print("Flip ASR: {:.4f}".format(np.array(overall_malicious_train_flip_asr).sum()/ args.num_mali))
+    print("Transfer ASR: {:.4f}".format(average_transfer_attack_success_rate))
     print("Average Performance on clean test set: {:.4f}".format(np.array(overall_performance).sum() / args.num_workers))
     average_overall_performance =  np.array(overall_performance).sum() / args.num_workers
     average_ASR = np.array(overall_malicious_train_attach_rate).sum() / args.num_mali
-    average_Flip_ASR = np.array(overall_performance).sum()/ args.num_workers
+    average_Flip_ASR = np.array(overall_malicious_train_flip_asr).sum()/ args.num_mali
     return average_overall_performance, average_ASR, average_Flip_ASR, average_transfer_attack_success_rate
 
 if __name__ == '__main__':
