@@ -127,6 +127,10 @@ def transform_dataset(trainset, testset, avg_nodes, args):
     if args.trigger_type == "renyi":
 
         G_trigger = nx.erdos_renyi_graph(num_trigger_nodes, args.density, directed=False)
+        if G_trigger.edges():
+            G_trigger = G_trigger
+        else:
+            G_trigger = nx.erdos_renyi_graph(num_trigger_nodes, 1.0, directed=False)
 
     elif args.trigger_type == "ws":
         G_trigger = nx.watts_strogatz_graph(num_trigger_nodes, args.avg_degree, args.density)
