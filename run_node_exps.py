@@ -1,5 +1,5 @@
 from Node_level_Models.configs.config import args_parser
-from helpers.metrics_utils import log_test_results
+from Node_level_Models.helpers.metrics_utils import log_test_results
 
 
 import numpy as np
