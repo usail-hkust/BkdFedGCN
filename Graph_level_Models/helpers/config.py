@@ -49,6 +49,8 @@ def args_parser():
     parser.add_argument('--epoch_backdoor', type=float, default= 0.0, choices=[0.0,0.05,0.1,0.2,0.3,0.4,0.5], help='from which epoch the malicious clients start backdoor attack')
     parser.add_argument('--seed', type=int, default=0, help='0-9')
     parser.add_argument('--proj_name', type=str, default="BkdFedGCN", help='wandb logger project name')
+    # GTA
+    parser.add_argument('--surrogate_topo_thrd', type=float, default=0.5, help = "surrogate_topo_thrd in GTA" )
 
     # other federated algorithm  settings (defense)
     parser.add_argument('--agg_num', type=int, default=1, help='aggregation number for multi-krum and bulyan')
