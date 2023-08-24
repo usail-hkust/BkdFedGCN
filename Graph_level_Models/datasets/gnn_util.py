@@ -73,9 +73,16 @@ def transform_dataset(trainset, testset, avg_nodes, args):
 
     #Randomly choose the trigger
     trigger_list = []
+    
+
     if args.trigger_position == "random":
         for data in train_trigger_graphs:
-            trigger_num = random.sample(data[0].nodes().tolist(), num_trigger_nodes)
+            # print("data[0].nodes().tolist()",len(data[0].nodes().tolist()))
+            # print("num trigger nodes", num_trigger_nodes)
+            if len(data[0].nodes().tolist()) < num_trigger_nodes:
+                trigger_num = data[0].nodes().tolist()
+            else:
+                trigger_num = random.sample(data[0].nodes().tolist(), num_trigger_nodes)
             trigger_list.append(trigger_num)
     elif args.trigger_position == "degree":
         for data in train_trigger_graphs:
