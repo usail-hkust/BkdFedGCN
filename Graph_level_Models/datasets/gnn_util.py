@@ -73,7 +73,7 @@ def transform_dataset(trainset, testset, avg_nodes, args):
 
     #Randomly choose the trigger
     trigger_list = []
-    
+
 
     if args.trigger_position == "random":
         for data in train_trigger_graphs:
